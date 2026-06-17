@@ -680,12 +680,15 @@ function tryAutoJoin() {
   connect()
     .then(() => {
       if (wrap) {
-        // نرجع العناصر الأصلية لو اتمسحت
         if (!$("yt-player")) {
           wrap.innerHTML = '<video id="html5-video" playsinline style="width:100%;height:100%;background:#000;display:none"></video><div id="yt-player" style="width:100%;height:100%;display:none"></div>';
         }
       }
-      if (videoSrc) loadPlayer(videoSrc);
+      // نستنى room_state يوصل (بييجي بعد connect بـ ~300ms) بعدين نحمّل
+      setTimeout(() => {
+        if (parsed) { videoSrc = parsed; loadPlayer(parsed); }
+        else if (videoSrc) loadPlayer(videoSrc);
+      }, 600);
     })
     .catch((e) => {
       console.error("connect failed:", e);
