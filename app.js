@@ -288,10 +288,12 @@ function loadYouTube(videoId) {
           };
         },
         onStateChange: (e) => {
-          if (isSyncing) return;
-          const t = yt.getCurrentTime();
-          if (e.data === YT.PlayerState.PLAYING) emit("play", t);
-          else if (e.data === YT.PlayerState.PAUSED) emit("pause", t);
+          if (isSyncing || !player) return;
+          try {
+            const t = yt.getCurrentTime();
+            if (e.data === YT.PlayerState.PLAYING) emit("play", t);
+            else if (e.data === YT.PlayerState.PAUSED) emit("pause", t);
+          } catch(_) {}
         },
       },
     });
