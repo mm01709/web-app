@@ -33,14 +33,50 @@
 
     <!-- إنشاء غرفة -->
     <div class="tab-panel active" id="panel-create">
-      <div class="field-wrap">
-        <span class="field-icon">🔗</span>
-        <input type="text" id="inp-video-url" placeholder="رابط فيديو (MP4 / YouTube) — اختياري" />
-      </div>
+      <!-- كود الغرفة -->
       <div class="room-code-preview">
         <span class="room-code-lbl">كود الغرفة</span>
         <span id="gen-room-code" class="room-code-val">------</span>
+        <button class="copy-code-btn" id="btn-copy-code" title="نسخ الكود">🔗</button>
       </div>
+
+      <!-- رابط يوتيوب / mp4 -->
+      <div class="field-wrap">
+        <span class="field-icon">▶</span>
+        <input type="text" id="inp-video-url" placeholder="رابط YouTube أو MP4 — اختياري" />
+      </div>
+
+      <!-- أو رفع فيديو -->
+      <div class="upload-divider"><span>أو</span></div>
+
+      <!-- منطقة الرفع -->
+      <div id="upload-zone" class="upload-zone">
+        <span class="upload-zone-icon">📁</span>
+        <span class="upload-zone-text">اضغط لاختيار فيديو</span>
+        <span class="upload-zone-sub">MP4 · MKV · MOV · WEBM</span>
+        <input type="file" id="inp-file" accept="video/mp4,video/x-matroska,video/webm,video/quicktime,.mp4,.mkv,.mov,.webm,.avi" style="display:none" />
+      </div>
+
+      <!-- حالة الرفع -->
+      <div id="upload-status" style="display:none">
+        <div class="upload-progress-row">
+          <span id="upload-status-text">جاري الرفع...</span>
+          <span id="upload-pct">0%</span>
+        </div>
+        <div class="upload-progress-bar"><div id="upload-progress-fill"></div></div>
+        <button class="upload-cancel-btn" id="btn-upload-cancel">إلغاء</button>
+      </div>
+
+      <!-- بعد الرفع بنجاح -->
+      <div id="upload-done" style="display:none" class="upload-done">
+        <span class="upload-done-icon">✅</span>
+        <div class="upload-done-info">
+          <span class="upload-done-label">تم الرفع بنجاح</span>
+          <span id="upload-done-name" class="upload-done-name"></span>
+        </div>
+        <button class="upload-change-btn" id="btn-upload-change">تغيير</button>
+      </div>
+
       <button class="btn-primary" id="btn-create">
         <span class="btn-icon">🎉</span> ابدأ الغرفة
       </button>

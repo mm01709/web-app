@@ -110,16 +110,227 @@ function initJoinScreen() {
 
   $("btn-create").addEventListener("click", onCreate);
   $("btn-join").addEventListener("click", onJoin);
+
+  // نسخ كود الغرفة
+  $("btn-copy-code").addEventListener("click", () => {
+    navigator.clipboard.writeText(setupRoomCode).catch(() => {});
+    toast("تم نسخ الكود: " + setupRoomCode);
+  });
+
+  initUpload();
+}
+
+// ============================================
+//  R2 Upload
+// ============================================
+const R2_WORKER = "https://rough-cell-19ed.mmsleep95.workers.dev";
+const CHUNK_SIZE = 5 * 1024 * 1024;   // 5 MB
+const SINGLE_LIMIT = 50 * 1024 * 1024; // 50 MB
+
+let _uploadedUrl = null;
+let _uploadXhr = null;
+let _uploadAbort = false;
+let _pickedFile = null;
+
+function initUpload() {
+  const zone = $("upload-zone");
+  const fileInput = $("inp-file");
+
+  zone.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) pickFile(fileInput.files[0]);
+  });
+
+  // Drag & drop
+  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("drag"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
+  zone.addEventListener("drop", e => {
+    e.preventDefault();
+    zone.classList.remove("drag");
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith("video/")) pickFile(f);
+  });
+
+  $("btn-upload-cancel").addEventListener("click", cancelUpload);
+  $("btn-upload-change").addEventListener("click", resetUpload);
+}
+
+function pickFile(file) {
+  _pickedFile = file;
+  _uploadedUrl = null;
+  const zone = $("upload-zone");
+  zone.classList.add("picked");
+  zone.querySelector(".upload-zone-icon").textContent = "🎬";
+  zone.querySelector(".upload-zone-text").textContent = file.name;
+  zone.querySelector(".upload-zone-sub").textContent = formatBytes(file.size);
+  $("upload-done").style.display = "none";
+  startUpload(file);
+}
+
+function resetUpload() {
+  _uploadedUrl = null;
+  _pickedFile = null;
+  _uploadAbort = false;
+  const zone = $("upload-zone");
+  zone.classList.remove("picked");
+  zone.querySelector(".upload-zone-icon").textContent = "📁";
+  zone.querySelector(".upload-zone-text").textContent = "اضغط لاختيار فيديو";
+  zone.querySelector(".upload-zone-sub").textContent = "MP4 · MKV · MOV · WEBM";
+  $("upload-done").style.display = "none";
+  $("upload-status").style.display = "none";
+  $("inp-file").value = "";
+}
+
+function cancelUpload() {
+  _uploadAbort = true;
+  if (_uploadXhr) { _uploadXhr.abort(); _uploadXhr = null; }
+  $("upload-status").style.display = "none";
+  resetUpload();
+  toast("تم إلغاء الرفع");
+}
+
+function setUploadProgress(pct, statusText) {
+  $("upload-status").style.display = "block";
+  $("upload-done").style.display = "none";
+  $("upload-status-text").textContent = statusText || "جاري الرفع...";
+  $("upload-pct").textContent = Math.round(pct * 100) + "%";
+  $("upload-progress-fill").style.width = (pct * 100) + "%";
+}
+
+function showUploadDone(name) {
+  $("upload-status").style.display = "none";
+  $("upload-done").style.display = "flex";
+  $("upload-done-name").textContent = name;
+}
+
+async function startUpload(file) {
+  _uploadAbort = false;
+  const mimeType = file.type || "video/mp4";
+
+  if (file.size <= SINGLE_LIMIT) {
+    await uploadSmall(file, mimeType);
+  } else {
+    await uploadMultipart(file, mimeType);
+  }
+}
+
+async function uploadSmall(file, mimeType) {
+  setUploadProgress(0, "جاري رفع الملف...");
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    _uploadXhr = xhr;
+    xhr.open("POST", `${R2_WORKER}/api/r2/upload`);
+    xhr.setRequestHeader("Content-Type", mimeType);
+    xhr.setRequestHeader("x-file-name", file.name);
+    xhr.setRequestHeader("x-chat-id", "watchparty");
+    xhr.setRequestHeader("x-uploaded-by", "watchparty");
+    xhr.setRequestHeader("x-folder", "videos");
+
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable) setUploadProgress(e.loaded / e.total, "جاري الرفع...");
+    };
+    xhr.onload = () => {
+      _uploadXhr = null;
+      if (_uploadAbort) return;
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        _uploadedUrl = data.publicUrl;
+        showUploadDone(file.name);
+        resolve();
+      } else {
+        $("upload-status").style.display = "none";
+        showError("فشل رفع الملف: " + xhr.status);
+        reject();
+      }
+    };
+    xhr.onerror = () => {
+      _uploadXhr = null;
+      if (!_uploadAbort) { $("upload-status").style.display = "none"; showError("خطأ في الاتصال أثناء الرفع"); }
+      reject();
+    };
+    xhr.send(file);
+  });
+}
+
+async function uploadMultipart(file, mimeType) {
+  setUploadProgress(0, "جاري تهيئة الرفع...");
+
+  // 1. Init
+  const initRes = await fetch(`${R2_WORKER}/api/r2/multipart/init`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fileName: file.name, chatId: "watchparty", uploadedBy: "watchparty", folder: "videos", contentType: mimeType })
+  });
+  if (!initRes.ok) { showError("فشل بدء الرفع"); return; }
+  const { uploadId, objectKey, publicUrl } = await initRes.json();
+
+  const parts = [];
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  let uploaded = 0;
+
+  for (let i = 0; i < totalChunks; i++) {
+    if (_uploadAbort) return;
+    const start = i * CHUNK_SIZE;
+    const chunk = file.slice(start, start + CHUNK_SIZE);
+    setUploadProgress(uploaded / file.size, `جزء ${i + 1} من ${totalChunks}`);
+
+    // retry 3x
+    let etag = "";
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const partRes = await fetch(`${R2_WORKER}/api/r2/multipart/part?uploadId=${encodeURIComponent(uploadId)}&objectKey=${encodeURIComponent(objectKey)}&partNumber=${i + 1}`, {
+        method: "PUT",
+        headers: { "Content-Type": mimeType },
+        body: chunk
+      });
+      if (partRes.ok) { const d = await partRes.json(); etag = d.etag || d.ETag || ""; break; }
+      if (attempt === 3) { showError("فشل رفع جزء " + (i + 1)); return; }
+      await new Promise(r => setTimeout(r, 1500 * attempt));
+    }
+    parts.push({ partNumber: i + 1, etag });
+    uploaded += chunk.size;
+    setUploadProgress(uploaded / file.size, `جزء ${i + 1} من ${totalChunks}`);
+  }
+
+  if (_uploadAbort) return;
+  setUploadProgress(1, "جاري الإنهاء...");
+
+  // Complete
+  const compRes = await fetch(`${R2_WORKER}/api/r2/multipart/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uploadId, objectKey, parts, publicUrl })
+  });
+  if (!compRes.ok) { showError("فشل إنهاء الرفع"); return; }
+  const compData = await compRes.json();
+  _uploadedUrl = compData.publicUrl || publicUrl;
+  showUploadDone(file.name);
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 }
 
 function onCreate() {
   const user = $("inp-username").value.trim();
-  const url = $("inp-video-url").value.trim();
   if (!user) return showError("اكتب اسمك");
-  const parsed = parseVideoUrl(url);
-  if (!parsed) return showError("رابط الفيديو غير صحيح (محتاج .mp4 / .m3u8 / YouTube)");
 
-  videoSrc = parsed;
+  // لو في فيديو مرفوع استخدمه
+  if (_uploadedUrl) {
+    videoSrc = { type: "html5", url: _uploadedUrl, hls: false };
+    startSession(setupRoomCode, user);
+    return;
+  }
+
+  // لو في رابط مكتوب
+  const url = $("inp-video-url").value.trim();
+  if (url) {
+    const parsed = parseVideoUrl(url);
+    if (!parsed) return showError("رابط الفيديو غير صحيح (محتاج .mp4 / .m3u8 / YouTube)");
+    videoSrc = parsed;
+  }
+
+  // ممكن يبدأ الغرفة بدون فيديو (هيضيف لاحقاً)
   startSession(setupRoomCode, user);
 }
 
