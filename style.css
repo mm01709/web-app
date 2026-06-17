@@ -1,0 +1,351 @@
+/* ============================================
+   WatchParty WebApp — style.css
+   responsive: موبايل + كمبيوتر
+   ============================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --green: #1dbf73;
+  --bg: #0f0f13;
+  --panel: #16161c;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: #fff;
+  font-family: 'Segoe UI', Tahoma, system-ui, sans-serif;
+  overflow: hidden;
+}
+
+.screen { display: none; height: 100%; }
+.screen.active { display: block; }
+
+/* ───────── شاشة الدخول ───────── */
+#screen-join {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+#screen-join.active { display: flex; }
+
+.join-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--panel);
+  border: 1px solid #ffffff12;
+  border-radius: 18px;
+  padding: 28px 24px;
+  text-align: center;
+}
+
+.join-logo { font-size: 44px; }
+.join-card h1 { font-size: 24px; margin-top: 6px; }
+.join-sub { color: #ffffff60; font-size: 13px; margin: 4px 0 20px; }
+
+.field-label {
+  display: block;
+  text-align: right;
+  font-size: 12px;
+  color: #ffffff70;
+  margin: 14px 0 6px;
+}
+
+input {
+  width: 100%;
+  background: #ffffff10;
+  border: 1px solid #ffffff18;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #fff;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus { border-color: var(--green); }
+input::placeholder { color: #ffffff35; }
+
+.code-input { text-align: center; letter-spacing: 4px; font-weight: 700; text-transform: uppercase; }
+
+.join-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 20px 0 14px;
+  background: #ffffff08;
+  border-radius: 10px;
+  padding: 4px;
+}
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff80;
+  padding: 9px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active { background: var(--green); color: #fff; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.hint { font-size: 11px; color: #ffffff40; text-align: right; margin: 6px 2px; line-height: 1.5; }
+
+.room-code-box {
+  background: #1dbf7315;
+  border: 1px solid #1dbf7330;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 14px;
+  color: #ffffff90;
+  margin: 14px 0;
+}
+.room-code-box span { color: var(--green); font-weight: 700; letter-spacing: 3px; font-size: 18px; }
+
+.btn {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--green); color: #fff; }
+.btn-secondary { background: #ffffff15; color: #fff; }
+
+.join-error { color: #ff6b6b; font-size: 13px; margin-top: 12px; min-height: 18px; }
+
+/* ───────── شاشة المشاهدة ───────── */
+.watch-layout {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.video-area {
+  flex: 1;
+  min-width: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+#player-wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+#html5-video, #yt-player {
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+#yt-player { display: none; }
+#yt-player iframe { width: 100%; height: 100%; }
+
+/* الشريط الجانبي */
+#sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid #ffffff12;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sb-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #1a1a2e, #1f2940);
+  border-bottom: 1px solid #ffffff10;
+}
+.sb-logo { font-size: 18px; }
+.sb-title { font-size: 14px; font-weight: 700; flex: 1; }
+.sb-room {
+  background: #1dbf7320; color: var(--green); border: 1px solid #1dbf7340;
+  border-radius: 14px; padding: 3px 10px; font-size: 12px; font-weight: 700;
+  letter-spacing: 1px; cursor: pointer; direction: ltr; white-space: nowrap;
+}
+.sb-icon {
+  background: #ffffff10; border: none; color: #fff; width: 30px; height: 30px;
+  border-radius: 8px; cursor: pointer; font-size: 14px;
+}
+.sb-icon:hover { background: #ffffff20; }
+
+.sb-members {
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px;
+  border-bottom: 1px solid #ffffff0a; min-height: 42px;
+}
+.member {
+  background: #ffffff0f; border-radius: 20px; padding: 3px 10px;
+  font-size: 12px; display: flex; align-items: center; gap: 5px;
+}
+.member.you { background: #1dbf7320; color: var(--green); }
+.avatar {
+  width: 18px; height: 18px; border-radius: 50%; color: #fff;
+  font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+
+.sb-feed {
+  flex: 1; overflow-y: auto; padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sb-feed::-webkit-scrollbar { width: 5px; }
+.sb-feed::-webkit-scrollbar-thumb { background: #ffffff20; border-radius: 3px; }
+
+.msg { display: flex; gap: 8px; align-items: flex-start; }
+.msg .avatar { width: 28px; height: 28px; font-size: 12px; flex-shrink: 0; }
+.msg .bubble { flex: 1; min-width: 0; }
+.msg .name { font-size: 11px; color: var(--green); font-weight: 600; margin-bottom: 2px; }
+.msg .text { font-size: 13px; color: #ffffffdd; line-height: 1.45; word-wrap: break-word; }
+.msg.self .name { color: #5aa9ff; }
+
+.event { font-size: 12px; color: #ffffff55; text-align: center; line-height: 1.4; }
+.event b { color: #ffffff88; font-weight: 600; }
+
+.sb-emoji-bar {
+  display: flex; gap: 4px; padding: 6px 12px; border-top: 1px solid #ffffff0a;
+}
+.sb-emoji-bar .emo {
+  font-size: 18px; cursor: pointer; border-radius: 6px; padding: 2px 4px;
+  transition: background 0.15s, transform 0.1s;
+}
+.sb-emoji-bar .emo:hover { background: #ffffff12; transform: scale(1.15); }
+
+.sb-input-row {
+  display: flex; gap: 6px; padding: 10px 12px; border-top: 1px solid #ffffff10;
+  align-items: center;
+}
+.sb-tool {
+  background: #ffffff10; border: 1px solid #ffffff15; color: #fff;
+  border-radius: 8px; height: 38px; min-width: 38px; font-size: 16px; cursor: pointer; flex-shrink: 0;
+}
+#sb-chat-input { flex: 1; }
+.sb-send {
+  background: var(--green); border: none; color: #fff; border-radius: 8px;
+  width: 42px; height: 38px; font-size: 16px; cursor: pointer; flex-shrink: 0;
+}
+
+/* منتقي الإيموجي */
+.emoji-picker {
+  position: absolute; bottom: 60px; left: 8px; right: 8px;
+  background: #1c1c24; border: 1px solid #ffffff18; border-radius: 12px;
+  padding: 10px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px;
+  max-height: 220px; overflow-y: auto; z-index: 20;
+}
+.emoji-picker .pe {
+  font-size: 20px; text-align: center; cursor: pointer; border-radius: 6px; padding: 4px 0;
+}
+.emoji-picker .pe:hover { background: #ffffff15; }
+
+/* reaction طايرة */
+.float-reaction {
+  position: fixed; font-size: 42px; pointer-events: none; z-index: 9999;
+  animation: floatUp 2.2s ease-out forwards;
+}
+@keyframes floatUp {
+  0%   { transform: translateY(0) scale(0.6); opacity: 0; }
+  15%  { transform: translateY(-20px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(-220px) scale(1); opacity: 0; }
+}
+
+/* زر الشات (يظهر على الموبايل بس) */
+#sb-toggle {
+  display: none;
+  position: fixed; bottom: 16px; left: 16px; z-index: 50;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--green); color: #fff; border: none; font-size: 22px;
+  cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+/* toast */
+#toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.88); color: #fff; padding: 10px 20px;
+  border-radius: 20px; font-size: 14px; z-index: 9999; opacity: 0;
+  transition: opacity 0.3s; pointer-events: none;
+}
+#toast.show { opacity: 1; }
+
+/* ───────── شريط الجودة ───────── */
+#quality-bar {
+  position: absolute; bottom: 12px; left: 12px;
+  background: rgba(0,0,0,0.72); border-radius: 8px;
+  padding: 5px 10px; display: flex; align-items: center; gap: 8px;
+  z-index: 10; backdrop-filter: blur(4px);
+}
+.q-label { font-size: 12px; color: #ffffffaa; }
+#quality-select {
+  background: #ffffff18; border: 1px solid #ffffff25; color: #fff;
+  border-radius: 6px; padding: 3px 8px; font-size: 12px; outline: none; cursor: pointer;
+  width: auto;
+}
+#quality-select option { background: #1a1a2e; }
+
+/* ───────── شريط الصوت ───────── */
+.voice-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-bottom: 1px solid #ffffff0a;
+  background: #13131a; min-height: 44px;
+}
+.voice-avatars {
+  display: flex; flex: 1; flex-wrap: wrap; gap: 4px; align-items: center;
+}
+.voice-avatar {
+  position: relative; display: flex; align-items: center; gap: 4px;
+  background: #ffffff0f; border-radius: 20px; padding: 2px 8px;
+  font-size: 12px;
+}
+.voice-avatar.speaking { background: #1dbf7330; border: 1px solid #1dbf7360; }
+.voice-avatar .mic-icon { font-size: 10px; opacity: 0.7; }
+.voice-avatar .mic-icon.muted { color: #ff6b6b; }
+
+.voice-btn {
+  background: #1dbf7320; border: 1px solid #1dbf7340; color: var(--green);
+  border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; transition: all 0.2s;
+}
+.voice-btn:hover { background: #1dbf7330; }
+.voice-btn.active { background: #e74c3c30; border-color: #e74c3c60; color: #ff6b6b; }
+
+.voice-mute-btn {
+  background: #ffffff10; border: 1px solid #ffffff15; color: #fff;
+  border-radius: 20px; padding: 5px 10px; font-size: 12px;
+  cursor: pointer; transition: all 0.2s;
+}
+.voice-mute-btn.muted { background: #e74c3c30; border-color: #e74c3c60; color: #ff6b6b; }
+
+/* ───────── موبايل ───────── */
+@media (max-width: 768px) {
+  .watch-layout { flex-direction: column; }
+
+  .video-area { flex: none; height: 38vh; }
+
+  #sidebar {
+    width: 100%;
+    flex: 1;
+    border-right: none;
+    border-top: 1px solid #ffffff12;
+  }
+
+  /* وضع الشات المنبثق فوق الفيديو (اختياري عبر الزر) */
+  #sidebar.floating {
+    position: fixed; inset: 0; z-index: 40; height: 100%;
+  }
+  #sb-toggle { display: flex; }
+}
