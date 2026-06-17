@@ -656,7 +656,6 @@ function tryAutoJoin() {
 
   if (!room || !user) return false;
 
-  // إخفاء شاشة الدخول وبدء الجلسة مباشرة
   const parsed = url ? parseVideoUrl(decodeURIComponent(url)) : null;
   if (parsed) videoSrc = parsed;
 
@@ -664,14 +663,21 @@ function tryAutoJoin() {
   username = user;
   localStorage.setItem("wp-username", user);
 
+  // اخفي شاشة الدخول فوراً واعرض شاشة المشاهدة مع loading
+  showScreen("watch");
+  buildSidebar();
+
+  // placeholder حتى يتحمل الفيديو
+  const wrap = $("player-wrap");
+  if (wrap && !videoSrc) {
+    wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ffffff60;font-size:14px">⏳ جاري الاتصال...</div>';
+  }
+
   connect()
     .then(() => {
-      buildSidebar();
-      showScreen("watch");
       if (videoSrc) loadPlayer(videoSrc);
     })
     .catch(() => {
-      // لو فشل الاتصال نرجع لشاشة الدخول
       showScreen("join");
     });
 
