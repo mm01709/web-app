@@ -6,9 +6,10 @@
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 :root {
-  --green: #1dbf73;
-  --bg: #0f0f13;
-  --panel: #16161c;
+  --green: #E8A020;
+  --gold: #E8A020;
+  --bg: #0e0e12;
+  --panel: #14141a;
 }
 
 html, body {
@@ -98,8 +99,8 @@ input::placeholder { color: #ffffff35; }
 .hint { font-size: 11px; color: #ffffff40; text-align: right; margin: 6px 2px; line-height: 1.5; }
 
 .room-code-box {
-  background: #1dbf7315;
-  border: 1px solid #1dbf7330;
+  background: #E8A02015;
+  border: 1px solid #E8A02030;
   border-radius: 10px;
   padding: 10px;
   font-size: 14px;
@@ -171,13 +172,13 @@ input::placeholder { color: #ffffff35; }
   align-items: center;
   gap: 8px;
   padding: 12px 14px;
-  background: linear-gradient(135deg, #1a1a2e, #1f2940);
+  background: linear-gradient(135deg, #0e0e12, #1a1408);
   border-bottom: 1px solid #ffffff10;
 }
 .sb-logo { font-size: 18px; }
 .sb-title { font-size: 14px; font-weight: 700; flex: 1; }
 .sb-room {
-  background: #1dbf7320; color: var(--green); border: 1px solid #1dbf7340;
+  background: #E8A02020; color: var(--green); border: 1px solid #E8A02040;
   border-radius: 14px; padding: 3px 10px; font-size: 12px; font-weight: 700;
   letter-spacing: 1px; cursor: pointer; direction: ltr; white-space: nowrap;
 }
@@ -195,7 +196,7 @@ input::placeholder { color: #ffffff35; }
   background: #ffffff0f; border-radius: 20px; padding: 3px 10px;
   font-size: 12px; display: flex; align-items: center; gap: 5px;
 }
-.member.you { background: #1dbf7320; color: var(--green); }
+.member.you { background: #E8A02020; color: var(--green); }
 .avatar {
   width: 18px; height: 18px; border-radius: 50%; color: #fff;
   font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
@@ -311,16 +312,16 @@ input::placeholder { color: #ffffff35; }
   background: #ffffff0f; border-radius: 20px; padding: 2px 8px;
   font-size: 12px;
 }
-.voice-avatar.speaking { background: #1dbf7330; border: 1px solid #1dbf7360; }
+.voice-avatar.speaking { background: #E8A02030; border: 1px solid #E8A02060; }
 .voice-avatar .mic-icon { font-size: 10px; opacity: 0.7; }
 .voice-avatar .mic-icon.muted { color: #ff6b6b; }
 
 .voice-btn {
-  background: #1dbf7320; border: 1px solid #1dbf7340; color: var(--green);
+  background: #E8A02020; border: 1px solid #E8A02040; color: var(--green);
   border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600;
   cursor: pointer; white-space: nowrap; transition: all 0.2s;
 }
-.voice-btn:hover { background: #1dbf7330; }
+.voice-btn:hover { background: #E8A02030; }
 .voice-btn.active { background: #e74c3c30; border-color: #e74c3c60; color: #ff6b6b; }
 
 .voice-mute-btn {
