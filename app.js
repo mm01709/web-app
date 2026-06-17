@@ -656,6 +656,7 @@ function buildSidebar() {
   $("sb-send").onclick = sendChat;
 
   initVideoOverlay();
+  initSidebarResize();
 
   // في portrait: إغلاق الشات لما تضغط على الفيديو
   $("video-area")?.addEventListener("click", () => {
@@ -861,6 +862,61 @@ function toggleChat(forceOpen) {
 }
 
 function toggleSidebarOverlay() { toggleChat(); } // backward compat
+
+// ── Sidebar Resize ────────────────────────────────────────────────
+function initSidebarResize() {
+  const resizer = $("sidebar-resizer");
+  const sidebar = $("sidebar");
+  if (!resizer || !sidebar) return;
+
+  let _dragging = false;
+  let _startPos = 0;
+  let _startSize = 0;
+
+  function isHorizontal() {
+    return window.innerWidth > 768 || window.matchMedia("(orientation: landscape)").matches;
+  }
+
+  function onStart(e) {
+    _dragging = true;
+    const touch = e.touches ? e.touches[0] : e;
+    _startPos = isHorizontal() ? touch.clientX : touch.clientY;
+    _startSize = isHorizontal() ? sidebar.offsetWidth : sidebar.offsetHeight;
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onEnd);
+    document.addEventListener("touchmove", onMove, { passive: false });
+    document.addEventListener("touchend", onEnd);
+    e.preventDefault();
+  }
+
+  function onMove(e) {
+    if (!_dragging) return;
+    const touch = e.touches ? e.touches[0] : e;
+    if (isHorizontal()) {
+      // عرض الشات: الماوس بيتحرك من اليمين (sidebar يبدأ على اليمين)
+      const delta = _startPos - touch.clientX;
+      const newW = Math.min(Math.max(_startSize + delta, 180), Math.round(window.innerWidth * 0.6));
+      sidebar.style.width = newW + "px";
+    } else {
+      // ارتفاع الشات في portrait
+      const delta = _startPos - touch.clientY;
+      const newH = Math.min(Math.max(_startSize + delta, 120), Math.round(window.innerHeight * 0.75));
+      sidebar.style.height = newH + "px";
+    }
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function onEnd() {
+    _dragging = false;
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onEnd);
+    document.removeEventListener("touchmove", onMove);
+    document.removeEventListener("touchend", onEnd);
+  }
+
+  resizer.addEventListener("mousedown", onStart);
+  resizer.addEventListener("touchstart", onStart, { passive: false });
+}
 
 function toggleFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {

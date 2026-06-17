@@ -279,58 +279,131 @@ input::placeholder { color: var(--white24); }
 #sidebar {
   width: 100%;
   height: 42vh;
+  min-height: 200px;
+  max-height: 70vh;
   flex-shrink: 0;
   background: var(--panel2);
   border-top: 1px solid rgba(232,160,32,0.12);
-  display: none; /* مخفي افتراضياً — يظهر بزر 💬 */
+  display: none;
   flex-direction: column;
   overflow: hidden;
-  transition: height 0.25s ease;
+  position: relative;
+  z-index: 10; /* فوق الـ overlay دايماً */
 }
 #sidebar.open { display: flex; }
+
+/* مقبض الـ resize للشات في portrait */
+#sidebar-resizer {
+  width: 100%;
+  height: 6px;
+  background: rgba(232,160,32,0.15);
+  cursor: ns-resize;
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid rgba(232,160,32,0.2);
+}
+#sidebar-resizer::before {
+  content: '';
+  width: 36px; height: 3px;
+  background: rgba(232,160,32,0.4);
+  border-radius: 3px;
+}
+#sidebar.open #sidebar-resizer { display: flex; }
 
 /* ── Desktop (> 768px): الشات دايماً ظاهر على اليمين ── */
 @media (min-width: 769px) {
   #watch-root { flex-direction: row; }
-  #video-area { flex: 1; height: 100%; }
+  #video-area { flex: 1; height: 100%; min-width: 0; }
   #sidebar {
     width: 320px;
+    min-width: 220px;
+    max-width: 50vw;
     height: 100%;
+    max-height: 100%;
     border-top: none;
     border-right: 1px solid rgba(232,160,32,0.12);
     flex-shrink: 0;
-    display: flex !important; /* دايماً ظاهر على desktop */
+    display: flex !important;
+    resize: none; /* هنعمل resize يدوي بـ JS */
+    position: relative;
   }
-  #fabs { display: none; } /* مش محتاج FABs على desktop */
-  /* overlay يظهر بس لما يضغط في fullscreen */
+  #fabs { display: none; }
+  /* مقبض resize جانبي على desktop */
+  #sidebar-resizer {
+    width: 5px;
+    height: 100%;
+    cursor: ew-resize;
+    position: absolute;
+    right: 100%;
+    top: 0;
+    border-top: none;
+    border-right: 1px solid rgba(232,160,32,0.2);
+    background: rgba(232,160,32,0.08);
+  }
+  #sidebar-resizer::before {
+    width: 3px; height: 36px;
+    background: rgba(232,160,32,0.4);
+    border-radius: 3px;
+  }
+  #sidebar.open #sidebar-resizer { display: flex; }
 }
 
-/* ── Landscape موبايل (orientation landscape + max 768px width) ── */
+/* ── Landscape موبايل ── */
 @media (orientation: landscape) and (max-width: 768px) {
   #watch-root { flex-direction: row; }
-  #video-area { flex: 1; height: 100%; }
+  #video-area { flex: 1; height: 100%; min-width: 0; }
   #sidebar {
     width: 260px;
+    min-width: 180px;
+    max-width: 60vw;
     height: 100%;
+    max-height: 100%;
     border-top: none;
     border-right: 1px solid rgba(232,160,32,0.12);
     flex-shrink: 0;
+    position: relative;
   }
+  #sidebar-resizer {
+    width: 5px; height: 100%;
+    cursor: ew-resize;
+    position: absolute;
+    right: 100%; top: 0;
+    border-top: none;
+    border-right: 1px solid rgba(232,160,32,0.2);
+    background: rgba(232,160,32,0.08);
+    display: flex;
+  }
+  #sidebar-resizer::before { width: 3px; height: 36px; border-radius: 3px; }
 }
 
 /* ── Fullscreen ── */
 body.is-fullscreen #watch-root { flex-direction: row; }
-body.is-fullscreen #video-area { flex: 1; height: 100vh; }
+body.is-fullscreen #video-area { flex: 1; height: 100vh; min-width: 0; }
 body.is-fullscreen #sidebar {
-  display: none; /* مخفي في fullscreen حتى يضغط 💬 */
+  display: none;
   width: 300px;
+  min-width: 200px;
+  max-width: 50vw;
   height: 100vh;
+  max-height: 100vh;
   border-top: none;
   border-right: 1px solid rgba(232,160,32,0.12);
   flex-shrink: 0;
+  position: relative;
+  z-index: 100000; /* فوق الـ overlay في fullscreen */
 }
 body.is-fullscreen #sidebar.open { display: flex; }
-body.is-fullscreen #fabs { display: flex; } /* FABs تظهر في fullscreen */
+body.is-fullscreen #fabs { display: flex; }
+body.is-fullscreen #sidebar-resizer {
+  width: 5px; height: 100%;
+  cursor: ew-resize;
+  position: absolute;
+  right: 100%; top: 0;
+  border-top: none;
+  display: flex;
+}
 
 /* ══════════════════════════════════════
    Controls Overlay (فوق الفيديو)
@@ -350,15 +423,15 @@ body.is-fullscreen #fabs { display: flex; } /* FABs تظهر في fullscreen */
   opacity: 1;
   pointer-events: auto;
 }
-/* في fullscreen: overlay يغطي الشاشة كلها */
+/* في fullscreen: overlay يغطي منطقة الفيديو فقط (مش الشات) */
 body.is-fullscreen #video-overlay,
 :fullscreen #video-overlay,
 :-webkit-full-screen #video-overlay {
-  position: fixed !important;
+  position: absolute !important;
   inset: 0 !important;
-  z-index: 99999 !important;
-  width: 100vw;
-  height: 100vh;
+  z-index: 51 !important;
+  width: 100%;
+  height: 100%;
 }
 /* gradient فوق وتحت */
 #ov-top {
@@ -428,6 +501,7 @@ body.is-fullscreen #video-overlay,
   justify-content: center;
   gap: 24px;
   pointer-events: auto;
+  direction: ltr;
 }
 #ov-center button {
   background: rgba(255,255,255,0.15);
@@ -458,6 +532,7 @@ body.is-fullscreen #video-overlay,
   align-items: center;
   gap: 8px;
   pointer-events: auto;
+  direction: ltr; /* مهم: يمنع عكس الـ slider بسبب RTL */
 }
 #ov-time, #ov-dur {
   font-size: 11px;
