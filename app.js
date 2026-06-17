@@ -629,11 +629,13 @@ const EMOJI_SET = ["😂","🤣","❤️","🔥","👏","🎉","😮","😢","�
 
 function buildSidebar() {
   $("sb-room-code").textContent = roomId;
+  try { $("ov-room-code").textContent = roomId; } catch(_) {}
 
   const copy = () => { navigator.clipboard.writeText(roomId).catch(() => {}); toast("✓ تم نسخ الكود: " + roomId); };
   $("sb-room-code").onclick = copy;
   $("sb-share").onclick = copy;
   $("sb-leave").onclick = () => { leaveVoice(); location.reload(); };
+  try { $("sb-close-chat").onclick = () => toggleChat(false); } catch(_) {}
 
   // زر مكتبة الفيديوهات
   $("sb-media").onclick = toggleMediaPanel;
@@ -655,17 +657,11 @@ function buildSidebar() {
 
   initVideoOverlay();
 
-  // إغلاق الـ sidebar لما تضغط برا في portrait
-  document.addEventListener("click", (e) => {
+  // في portrait: إغلاق الشات لما تضغط على الفيديو
+  $("video-area")?.addEventListener("click", () => {
+    if (_isLandscapeOrFs()) return; // في landscape/fullscreen الشات جنب الفيديو مش overlay
     const sb = $("sidebar");
-    if (sb.classList.contains("open") && !sb.contains(e.target) && e.target !== $("fb-chat")) {
-      const isLandOrFs = window.matchMedia("(orientation: landscape)").matches
-        || !!(document.fullscreenElement || document.webkitFullscreenElement)
-        || document.body.classList.contains("is-fullscreen");
-      if (isLandOrFs) return; // في landscape/fullscreen الـ sidebar جنب الفيديو مش overlay
-      sb.classList.remove("open");
-      try { $("fb-chat").classList.remove("active"); } catch(_) {}
-    }
+    if (sb?.classList.contains("open")) toggleChat(false);
   });
 
   // fullscreen events
@@ -675,100 +671,201 @@ function buildSidebar() {
   addEvent(null, "welcome");
 }
 
-// ── Video Overlay (يظهر في landscape + fullscreen) ──────────────
+// ── Video Overlay + FABs (زي التطبيق بالظبط) ─────────────────────
 let _overlayTimer = null;
+
+function _doMute() {
+  micMuted = !micMuted;
+  if (localStream) localStream.getAudioTracks().forEach(t => { t.enabled = !micMuted; });
+  const muteText = micMuted ? "🔇" : "🎤";
+  try { $("fb-mute").textContent = muteText; $("fb-mute").classList.toggle("muted", micMuted); } catch(_) {}
+  try { $("fab-mute").textContent = muteText; $("fab-mute").classList.toggle("muted", micMuted); } catch(_) {}
+  try { $("btn-mute").textContent = micMuted ? "🔇 أنت مكتوم" : "🎤"; $("btn-mute").classList.toggle("muted", micMuted); } catch(_) {}
+  toast(micMuted ? "تم كتم الميكروفون 🔇" : "الميكروفون مفعّل 🎤");
+}
+
+function _doVoiceToggle() {
+  if (inVoice) {
+    leaveVoice();
+    try { $("fb-voice").classList.remove("in-voice"); $("fb-voice").textContent = "🎙"; $("fb-mute").style.display = "none"; } catch(_) {}
+    try { $("fab-voice").classList.remove("in-voice"); $("fab-mute").style.display = "none"; } catch(_) {}
+    toast("خرجت من الصوت");
+  } else {
+    joinVoice().then(() => {
+      try { $("fb-voice").classList.add("in-voice"); $("fb-voice").textContent = "🔴"; $("fb-mute").style.display = ""; } catch(_) {}
+      try { $("fab-voice").classList.add("in-voice"); $("fab-mute").style.display = ""; } catch(_) {}
+      toast("دخلت الصوت 🎙");
+    }).catch(err => toast("❌ " + (err.message || "فشل الصوت")));
+  }
+}
+
+function _doRotate() {
+  if (!screen.orientation || !screen.orientation.lock) { toast("⚠️ اقلب جهازك يدوياً"); return; }
+  const cur = screen.orientation.type || "";
+  const target = cur.includes("landscape") ? "portrait" : "landscape";
+  screen.orientation.lock(target).catch(() => toast("⚠️ اقلب جهازك يدوياً"));
+}
 
 function initVideoOverlay() {
   const overlay = $("video-overlay");
+  const va = $("video-area");
 
-  // ملء emoji bar
-  const emoBar = $("overlay-emojis");
-  EMOJI_QUICK.forEach(em => {
-    const btn = el("span", { class: "ov-emo", text: em });
-    btn.onclick = () => { sendReaction(em); showOverlay(); };
-    emoBar.appendChild(btn);
-  });
+  // ملء إيموجي bar في overlay
+  const emoBar = $("ov-emojis");
+  if (emoBar) {
+    EMOJI_QUICK.forEach(em => {
+      const btn = el("span", { class: "ov-emo", text: em });
+      btn.onclick = (e) => { e.stopPropagation(); sendReaction(em); showOverlay(); };
+      emoBar.appendChild(btn);
+    });
+  }
 
-  // أزرار التحكم
+  // === Overlay buttons ===
   $("fb-fullscreen").onclick = toggleFullscreen;
+  $("fb-rotate").onclick     = () => { _doRotate(); showOverlay(); };
+  $("fb-mute").onclick       = () => { _doMute(); showOverlay(); };
+  $("fb-voice").onclick      = () => { _doVoiceToggle(); showOverlay(); };
+  $("fb-chat").onclick       = () => { toggleChat(); showOverlay(); };
 
-  $("fb-rotate").onclick = () => {
-    if (!screen.orientation || !screen.orientation.lock) {
-      toast("⚠️ التدوير غير مدعوم");
-      return;
-    }
-    const cur = screen.orientation.type || "";
-    const target = cur.includes("landscape") ? "portrait" : "landscape";
-    screen.orientation.lock(target).catch(() => toast("⚠️ اقلب جهازك يدوياً"));
+  // Center: play/skip
+  $("ov-play").onclick       = () => { togglePlayPause(); showOverlay(); };
+  $("ov-skip-back").onclick  = () => { seekRelative(-10); showOverlay(); };
+  $("ov-skip-fwd").onclick   = () => { seekRelative(10);  showOverlay(); };
+
+  // Seek bar
+  const seekEl = $("ov-seek");
+  let _seeking = false;
+  seekEl.addEventListener("input", () => {
+    _seeking = true;
+    const val = seekEl.value / 1000;
+    seekRelativeTo(val);
     showOverlay();
-  };
+  });
+  seekEl.addEventListener("change", () => { _seeking = false; });
 
-  $("fb-mute").onclick = () => {
-    micMuted = !micMuted;
-    if (localStream) localStream.getAudioTracks().forEach(t => { t.enabled = !micMuted; });
-    const btn = $("fb-mute");
-    btn.textContent = micMuted ? "🔇" : "🎤";
-    btn.classList.toggle("muted", micMuted);
-    $("btn-mute").textContent = micMuted ? "🔇 أنت مكتوم" : "🎤";
-    $("btn-mute").classList.toggle("muted", micMuted);
-    toast(micMuted ? "تم كتم الميكروفون 🔇" : "الميكروفون مفعّل 🎤");
-    showOverlay();
-  };
+  // FABs
+  $("fab-voice").onclick = _doVoiceToggle;
+  $("fab-mute").onclick  = _doMute;
+  $("fab-chat").onclick  = () => toggleChat();
 
-  $("fb-voice").onclick = () => {
-    const inVoice = $("fb-voice").classList.contains("in-voice");
-    if (inVoice) {
-      leaveVoice();
-      $("fb-voice").classList.remove("in-voice");
-      $("fb-voice").textContent = "🎙";
-      $("fb-mute").style.display = "none";
-      toast("خرجت من الصوت");
-    } else {
-      joinVoice().then(() => {
-        $("fb-voice").classList.add("in-voice");
-        $("fb-voice").textContent = "🔴";
-        $("fb-mute").style.display = "";
-        toast("دخلت الصوت 🎙");
-      }).catch(err => toast("❌ " + (err.message || "فشل الصوت")));
-    }
-    showOverlay();
-  };
+  // Room code in overlay top
+  try { $("ov-room-code").textContent = roomId || ""; } catch(_) {}
 
-  $("fb-chat").onclick = () => {
-    toggleSidebarOverlay();
-    showOverlay();
-  };
+  // Close sidebar from X button inside sidebar
+  try { $("sb-close-chat").onclick = () => toggleChat(false); } catch(_) {}
 
-  // إظهار الـ overlay عند تحريك الماوس أو اللمس
-  const va = document.querySelector(".video-area");
+  // Show overlay on interaction with video area
+  va.addEventListener("click", () => { if (!_seeking) showOverlay(); });
   va.addEventListener("mousemove", showOverlay);
   va.addEventListener("touchstart", showOverlay, { passive: true });
-  overlay.addEventListener("mousemove", showOverlay);
-  overlay.addEventListener("touchstart", showOverlay, { passive: true });
+
+  // Sync progress bar
+  _startProgressSync();
+}
+
+function _startProgressSync() {
+  setInterval(() => {
+    let cur = 0, dur = 1, paused = true;
+    const video = $("html5-video");
+    if (video && video.style.display !== "none" && video.duration) {
+      cur = video.currentTime; dur = video.duration; paused = video.paused;
+    } else if (ytPlayer && typeof ytPlayer.getDuration === "function" && ytPlayer.getDuration() > 0) {
+      cur = ytPlayer.getCurrentTime(); dur = ytPlayer.getDuration();
+      paused = ytPlayer.getPlayerState() !== 1;
+    } else return;
+    const pct = cur / dur;
+    const seekEl = $("ov-seek");
+    if (seekEl) {
+      seekEl.value = Math.round(pct * 1000);
+      seekEl.style.setProperty("--progress", (pct * 100).toFixed(2) + "%");
+    }
+    const t = $("ov-time"), d = $("ov-dur");
+    if (t) t.textContent = fmtTime(cur);
+    if (d) d.textContent = fmtTime(dur);
+    const playBtn = $("ov-play");
+    if (playBtn) playBtn.textContent = paused ? "▶" : "⏸";
+  }, 500);
+}
+
+function fmtTime(s) {
+  if (!s || isNaN(s)) return "0:00";
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return m + ":" + String(sec).padStart(2, "0");
+}
+
+function togglePlayPause() {
+  const video = $("html5-video");
+  if (video && video.style.display !== "none") {
+    if (video.paused) { video.play(); send({ type: "play",  roomId, username, time: video.currentTime }); }
+    else              { video.pause(); send({ type: "pause", roomId, username, time: video.currentTime }); }
+  } else if (ytPlayer && typeof ytPlayer.getPlayerState === "function") {
+    const st = ytPlayer.getPlayerState();
+    if (st === 1) { ytPlayer.pauseVideo(); send({ type: "pause", roomId, username, time: ytPlayer.getCurrentTime() }); }
+    else          { ytPlayer.playVideo();  send({ type: "play",  roomId, username, time: ytPlayer.getCurrentTime() }); }
+  }
+}
+
+function seekRelative(delta) {
+  const video = $("html5-video");
+  if (video && video.style.display !== "none") {
+    const t = Math.max(0, Math.min(video.duration || 0, video.currentTime + delta));
+    video.currentTime = t;
+    send({ type: "seek", roomId, username, time: t });
+  } else if (ytPlayer && typeof ytPlayer.getCurrentTime === "function") {
+    const t = Math.max(0, ytPlayer.getCurrentTime() + delta);
+    ytPlayer.seekTo(t, true);
+    send({ type: "seek", roomId, username, time: t });
+  }
+}
+
+function seekRelativeTo(pct) {
+  const video = $("html5-video");
+  if (video && video.style.display !== "none" && video.duration) {
+    const t = pct * video.duration;
+    video.currentTime = t;
+    send({ type: "seek", roomId, username, time: t });
+  } else if (ytPlayer && typeof ytPlayer.getDuration === "function") {
+    const t = pct * ytPlayer.getDuration();
+    ytPlayer.seekTo(t, true);
+    send({ type: "seek", roomId, username, time: t });
+  }
 }
 
 function showOverlay() {
   const ov = $("video-overlay");
-  ov.classList.remove("hidden");
   ov.classList.add("visible");
+  // أخفي FABs لما الـ overlay ظاهر في landscape/fullscreen
+  const isLandFs = _isLandscapeOrFs();
+  if (isLandFs) $("fabs")?.classList.add("hidden");
   clearTimeout(_overlayTimer);
   _overlayTimer = setTimeout(() => {
     ov.classList.remove("visible");
-    ov.classList.add("hidden");
-  }, 3500);
+    if (isLandFs) $("fabs")?.classList.remove("hidden");
+  }, 4000);
 }
 
-function toggleSidebarOverlay() {
-  const sb = $("sidebar");
-  const btn = $("fb-chat");
-  sb.classList.toggle("open");
-  btn.classList.toggle("active", sb.classList.contains("open"));
+function _isLandscapeOrFs() {
+  return window.matchMedia("(orientation: landscape)").matches
+    || !!(document.fullscreenElement || document.webkitFullscreenElement)
+    || document.body.classList.contains("is-fullscreen");
 }
+
+function toggleChat(forceOpen) {
+  const sb = $("sidebar");
+  if (!sb) return;
+  const willOpen = forceOpen !== undefined ? forceOpen : !sb.classList.contains("open");
+  sb.classList.toggle("open", willOpen);
+  // sync button states
+  try { $("fb-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
+  try { $("fab-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
+}
+
+function toggleSidebarOverlay() { toggleChat(); } // backward compat
 
 function toggleFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    const el = document.documentElement;
-    (el.requestFullscreen || el.webkitRequestFullscreen || (() => toast("⚠️ المتصفح لا يدعم الشاشة الكاملة"))).call(el);
+    const fsEl = document.documentElement;
+    (fsEl.requestFullscreen || fsEl.webkitRequestFullscreen || (() => toast("⚠️ المتصفح لا يدعم الشاشة الكاملة"))).call(fsEl);
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock("landscape").catch(() => {});
     }
@@ -781,20 +878,13 @@ function toggleFullscreen() {
 function _onFullscreenChange() {
   const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
   document.body.classList.toggle("is-fullscreen", isFs);
-  const ov = $("video-overlay");
-
   if (isFs) {
     try { $("fb-fullscreen").textContent = "✕"; } catch(_) {}
-    // أظهر الـ overlay فوراً بـ fixed position
-    if (ov) { ov.style.display = "flex"; }
     showOverlay();
   } else {
     try { $("fb-fullscreen").textContent = "⛶"; } catch(_) {}
-    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(_) {}
-    if ($("sidebar")) $("sidebar").classList.remove("open");
-    try { $("fb-chat").classList.remove("active"); } catch(_) {}
-    // أعد الـ overlay لحالته الطبيعي (CSS يتحكم في display)
-    if (ov) { ov.style.display = ""; ov.classList.remove("visible","hidden"); }
+    try { screen.orientation?.unlock?.(); } catch(_) {}
+    toggleChat(false);
   }
 }
 
@@ -953,7 +1043,7 @@ async function joinVoice() {
   $("fb-mute").textContent = "🎤";
   $("fb-mute").classList.remove("muted");
   try { $("fb-voice").classList.add("in-voice"); $("fb-voice").textContent = "🔴"; } catch(_) {}
-  $("fb-mute").classList.remove("muted");
+  try { $("fab-voice").classList.add("in-voice"); $("fab-mute").style.display = ""; } catch(_) {}
 
   send({ type: "voice_join", roomId, username });
   toast("انضممت للصوت 🎙");
@@ -975,6 +1065,7 @@ function leaveVoice() {
   $("btn-mute").style.display = "none";
   $("fb-mute").style.display = "none";
   try { $("fb-voice").classList.remove("in-voice"); $("fb-voice").textContent = "🎙"; } catch(_) {}
+  try { $("fab-voice").classList.remove("in-voice"); $("fab-mute").style.display = "none"; } catch(_) {}
 
   // امسح الـ audio elements
   $("remote-audios").innerHTML = "";

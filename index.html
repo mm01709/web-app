@@ -96,49 +96,55 @@
 
 <!-- ───────── شاشة المشاهدة ───────── -->
 <div id="screen-watch" class="screen">
-  <div class="watch-layout">
 
-    <!-- منطقة الفيديو -->
-    <div class="video-area">
+  <!-- الـ layout الرئيسي: فيديو + شات -->
+  <div id="watch-root">
+
+    <!-- ── منطقة الفيديو الكاملة ── -->
+    <div id="video-area">
       <div id="player-wrap">
         <video id="html5-video" playsinline></video>
         <div id="yt-player"></div>
 
-        <!-- شريط الجودة -->
-        <div id="quality-bar" style="display:none">
-          <span class="q-label">جودة</span>
-          <select id="quality-select">
-            <option value="auto">تلقائي</option>
-            <option value="hd2160">4K</option>
-            <option value="hd1440">1440p</option>
-            <option value="hd1080">1080p</option>
-            <option value="hd720">720p</option>
-            <option value="large">480p</option>
-            <option value="medium">360p</option>
-            <option value="small">240p</option>
-            <option value="tiny">144p</option>
-          </select>
-        </div>
-
-        <!-- Video overlay — داخل player-wrap عشان يظهر في fullscreen -->
+        <!-- Controls Overlay (زي التطبيق) -->
         <div id="video-overlay">
-          <div id="overlay-emojis"></div>
-          <div id="overlay-controls">
-            <button id="fb-fullscreen" title="ملء الشاشة / خروج">⛶</button>
-            <button id="fb-rotate" title="تدوير الشاشة">⟳</button>
-            <button id="fb-mute" title="كتم المايك" style="display:none">🎤</button>
-            <button id="fb-voice" title="دخول / خروج الصوت">🎙</button>
-            <button id="fb-chat" title="الشات">💬</button>
+          <!-- Top bar: كود + إيموجي سريع + أزرار -->
+          <div id="ov-top">
+            <span id="ov-room-code"></span>
+            <div id="ov-emojis"></div>
+            <div id="ov-top-btns">
+              <button id="fb-chat" title="الشات">💬</button>
+              <button id="fb-mute" title="كتم المايك" style="display:none">🎤</button>
+              <button id="fb-voice" title="صوت">🎙</button>
+              <button id="fb-fullscreen" title="ملء الشاشة">⛶</button>
+            </div>
+          </div>
+          <!-- Center: play/pause + skip -->
+          <div id="ov-center">
+            <button id="ov-skip-back" title="-10s">⏮10</button>
+            <button id="ov-play" title="تشغيل/إيقاف">▶</button>
+            <button id="ov-skip-fwd" title="+10s">10⏭</button>
+          </div>
+          <!-- Bottom: progress + time + fullscreen -->
+          <div id="ov-bottom">
+            <span id="ov-time">0:00</span>
+            <input type="range" id="ov-seek" min="0" max="1000" value="0" step="1" />
+            <span id="ov-dur">0:00</span>
+            <button id="fb-rotate" title="تدوير">⟳</button>
           </div>
         </div>
-      </div>
 
-      <!-- float-bar قديم (نحتفظ بالـ ID للـ JS) -->
-      <div id="float-bar" style="display:none"></div>
+        <!-- FABs على اليمين (زي التطبيق) -->
+        <div id="fabs">
+          <button id="fab-voice" title="صوت">🎙</button>
+          <button id="fab-mute" title="كتم" style="display:none">🔇</button>
+          <button id="fab-chat" title="الشات">💬</button>
+        </div>
+      </div>
     </div>
 
-    <!-- الشريط الجانبي -->
-    <aside id="sidebar">
+    <!-- ── الشات Panel ── -->
+    <div id="sidebar">
       <!-- Header -->
       <div class="sb-header">
         <span class="sb-logo">🎬</span>
@@ -147,14 +153,15 @@
         <button class="sb-icon-btn" id="sb-media" title="مكتبة الفيديوهات">📂</button>
         <button class="sb-icon-btn" id="sb-share" title="نسخ الكود">🔗</button>
         <button class="sb-icon-btn" id="sb-leave" title="مغادرة">🚪</button>
+        <button class="sb-icon-btn" id="sb-close-chat" title="إغلاق">✕</button>
       </div>
 
-      <!-- مكتبة الفيديوهات (تظهر عند الضغط على 📂) -->
+      <!-- مكتبة الفيديوهات -->
       <div id="media-panel" style="display:none">
         <div class="media-panel-header">
           <span>📂 مكتبة الفيديوهات</span>
-          <button id="media-refresh" title="تحديث">↻</button>
-          <button id="media-close" title="إغلاق">✕</button>
+          <button id="media-refresh">↻</button>
+          <button id="media-close">✕</button>
         </div>
         <div id="media-list" class="media-list">
           <div class="media-loading">جاري التحميل...</div>
@@ -182,9 +189,28 @@
         <input type="text" id="sb-chat-input" placeholder="اكتب رسالة..." maxlength="300" />
         <button class="sb-send" id="sb-send">➤</button>
       </div>
-    </aside>
+    </div>
 
   </div>
+
+  <!-- quality bar (خارج overlay) -->
+  <div id="quality-bar" style="display:none">
+    <span class="q-label">جودة</span>
+    <select id="quality-select">
+      <option value="auto">تلقائي</option>
+      <option value="hd2160">4K</option>
+      <option value="hd1440">1440p</option>
+      <option value="hd1080">1080p</option>
+      <option value="hd720">720p</option>
+      <option value="large">480p</option>
+      <option value="medium">360p</option>
+      <option value="small">240p</option>
+      <option value="tiny">144p</option>
+    </select>
+  </div>
+
+  <!-- float-bar قديم placeholder -->
+  <div id="float-bar" style="display:none"></div>
 </div>
 
 <!-- Toast -->
