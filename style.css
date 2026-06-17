@@ -1141,6 +1141,68 @@ body.is-fullscreen #video-overlay,
 }
 #toast.show { opacity: 1; }
 
+/* Confirm Dialog */
+#confirm-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 20px;
+}
+.confirm-box {
+  background: #1E1E26;
+  border: 1px solid rgba(232,160,32,0.2);
+  border-radius: 16px;
+  padding: 24px 20px 20px;
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  animation: fadeUp 0.18s ease;
+}
+.confirm-title {
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.confirm-msg {
+  color: rgba(255,255,255,0.65);
+  font-size: 13px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.confirm-btns {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.confirm-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.confirm-btn:active { opacity: 0.75; }
+.confirm-cancel {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.55);
+}
+.confirm-primary {
+  background: var(--gold);
+  color: #000;
+}
+.confirm-danger {
+  background: #c0392b;
+  color: #fff;
+}
+
 /* Floating reaction */
 .float-reaction {
   position: fixed;

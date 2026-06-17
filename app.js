@@ -687,17 +687,58 @@ function _doMute() {
 
 function _doVoiceToggle() {
   if (inVoice) {
-    leaveVoice();
-    try { $("fb-voice").classList.remove("in-voice"); $("fb-voice").textContent = "🎙"; $("fb-mute").style.display = "none"; } catch(_) {}
-    try { $("fab-voice").classList.remove("in-voice"); $("fab-mute").style.display = "none"; } catch(_) {}
-    toast("خرجت من الصوت");
+    showConfirm({
+      title: "خروج من المكالمة",
+      message: "هتخرج من المكالمة الصوتية؟",
+      confirmText: "خروج",
+      confirmClass: "confirm-danger",
+      onConfirm: () => {
+        leaveVoice();
+        try { $("fb-voice").classList.remove("in-voice"); $("fb-voice").textContent = "🎙"; $("fb-mute").style.display = "none"; } catch(_) {}
+        try { $("fab-voice").classList.remove("in-voice"); $("fab-mute").style.display = "none"; } catch(_) {}
+        toast("خرجت من الصوت");
+      }
+    });
   } else {
-    joinVoice().then(() => {
-      try { $("fb-voice").classList.add("in-voice"); $("fb-voice").textContent = "🔴"; $("fb-mute").style.display = ""; } catch(_) {}
-      try { $("fab-voice").classList.add("in-voice"); $("fab-mute").style.display = ""; } catch(_) {}
-      toast("دخلت الصوت 🎙");
-    }).catch(err => toast("❌ " + (err.message || "فشل الصوت")));
+    showConfirm({
+      title: "انضمام للمكالمة",
+      message: "هتنضم للمكالمة الصوتية مع أعضاء الغرفة؟",
+      confirmText: "انضمام",
+      confirmClass: "confirm-primary",
+      onConfirm: () => {
+        joinVoice().then(() => {
+          try { $("fb-voice").classList.add("in-voice"); $("fb-voice").textContent = "🔴"; $("fb-mute").style.display = ""; } catch(_) {}
+          try { $("fab-voice").classList.add("in-voice"); $("fab-mute").style.display = ""; } catch(_) {}
+          toast("دخلت الصوت 🎙");
+        }).catch(err => toast("❌ " + (err.message || "فشل الصوت")));
+      }
+    });
   }
+}
+
+function showConfirm({ title, message, confirmText, confirmClass, onConfirm }) {
+  // إزالة أي dialog قديم
+  const old = document.getElementById("confirm-dialog");
+  if (old) old.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "confirm-dialog";
+  overlay.innerHTML = `
+    <div class="confirm-box">
+      <div class="confirm-title">${title}</div>
+      <div class="confirm-msg">${message}</div>
+      <div class="confirm-btns">
+        <button class="confirm-btn confirm-cancel">إلغاء</button>
+        <button class="confirm-btn ${confirmClass}">${confirmText}</button>
+      </div>
+    </div>
+  `;
+
+  overlay.querySelector(".confirm-cancel").onclick = () => overlay.remove();
+  overlay.querySelector("." + confirmClass).onclick = () => { overlay.remove(); onConfirm(); };
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  document.body.appendChild(overlay);
 }
 
 function _doRotate() {
