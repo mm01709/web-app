@@ -20,8 +20,14 @@
   --white08: rgba(255,255,255,0.08);
 }
 
-html, body {
+html {
   height: 100%;
+  /* dvh يحسب الارتفاع الحقيقي بعد ظهور الكيبورد على الموبايل */
+  height: 100dvh;
+}
+body {
+  height: 100%;
+  height: 100dvh;
   background: var(--bg);
   color: #fff;
   font-family: 'Segoe UI', Tahoma, system-ui, sans-serif;
@@ -32,9 +38,12 @@ html, body {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: var(--gold); opacity: 0.4; border-radius: 4px; }
 
-.screen { display: none; height: 100%; position: relative; }
+.screen { display: none; height: 100%; height: 100dvh; position: relative; }
 .screen.active { display: block; }
 #screen-watch.active { display: flex; flex-direction: column; }
+
+/* الشات direction RTL عشان النصوص تفضل عربي */
+#sidebar { direction: rtl; }
 
 /* ═══════════════════════════════════════
    خلفية متوهجة
@@ -240,20 +249,23 @@ input::placeholder { color: var(--white24); }
 #screen-watch { background: #000; }
 #float-bar { display: none !important; }
 
-/* watch-root: Stack — الفيديو يملأ كل الشاشة */
+/* watch-root */
 #watch-root {
   position: relative;
   width: 100%;
   height: 100%;
+  height: 100dvh; /* يتكيف مع الكيبورد */
   background: #000;
   display: flex;
   flex-direction: column;
+  direction: ltr; /* نتحكم في ترتيب العناصر يدوياً — الشات على اليمين */
 }
 
 /* ── video-area: يملأ المساحة المتاحة ── */
 #video-area {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   position: relative;
   background: #000;
   overflow: hidden;
@@ -278,9 +290,9 @@ input::placeholder { color: var(--white24); }
 /* ── Sidebar: تحت الفيديو في portrait ── */
 #sidebar {
   width: 100%;
-  height: 42vh;
-  min-height: 200px;
-  max-height: 70vh;
+  height: 42dvh;
+  min-height: 80px;
+  max-height: 70dvh;
   flex-shrink: 0;
   background: var(--panel2);
   border-top: 1px solid rgba(232,160,32,0.12);
@@ -288,7 +300,7 @@ input::placeholder { color: var(--white24); }
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  z-index: 10; /* فوق الـ overlay دايماً */
+  z-index: 10;
 }
 #sidebar.open { display: flex; }
 
@@ -316,95 +328,111 @@ input::placeholder { color: var(--white24); }
   display: block;
 }
 
-/* ── Desktop (> 768px): الشات دايماً ظاهر على اليمين ── */
+/* ── Desktop (> 768px): الشات دايماً على اليمين ── */
 @media (min-width: 769px) {
   #watch-root { flex-direction: row; }
   #video-area { flex: 1; height: 100%; min-width: 0; }
   #sidebar {
+    order: 2; /* اليمين في LTR context */
     width: 320px;
-    min-width: 220px;
+    min-width: 200px;
     max-width: 50vw;
     height: 100%;
     max-height: 100%;
     border-top: none;
-    border-right: 1px solid rgba(232,160,32,0.12);
+    border-left: 1px solid rgba(232,160,32,0.12);
+    border-right: none;
     flex-shrink: 0;
     display: flex !important;
-    resize: none; /* هنعمل resize يدوي بـ JS */
     position: relative;
   }
   #fabs { display: none; }
-  /* مقبض resize جانبي على desktop */
   #sidebar-resizer {
+    order: 1;
     width: 14px;
     height: 100%;
     cursor: ew-resize;
     border-top: none;
-    border-left: 2px solid rgba(232,160,32,0.3);
+    border-right: 2px solid rgba(232,160,32,0.3);
+    border-left: none;
     background: rgba(232,160,32,0.06);
     flex-shrink: 0;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
   }
-  #sidebar-resizer::before {
-    width: 4px; height: 48px;
-  }
+  #sidebar-resizer::before { width: 4px; height: 48px; }
 }
 
 /* ── Landscape موبايل ── */
 @media (orientation: landscape) and (max-width: 768px) {
   #watch-root { flex-direction: row; }
-  #video-area { flex: 1; height: 100%; min-width: 0; }
+  #video-area { flex: 1; height: 100dvh; min-width: 0; }
   #sidebar {
+    order: 2;
     width: 260px;
-    min-width: 180px;
+    min-width: 150px;
     max-width: 60vw;
-    height: 100%;
-    max-height: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
     border-top: none;
-    border-right: 1px solid rgba(232,160,32,0.12);
+    border-left: 1px solid rgba(232,160,32,0.12);
+    border-right: none;
     flex-shrink: 0;
     position: relative;
+    display: none;
   }
+  #sidebar.open { display: flex; }
   #sidebar-resizer {
-    width: 20px; height: 100%; /* عريض للموبايل landscape */
+    order: 1;
+    width: 20px;
+    height: 100%;
     cursor: ew-resize;
     border-top: none;
-    border-left: 2px solid rgba(232,160,32,0.3);
+    border-right: 2px solid rgba(232,160,32,0.3);
+    border-left: none;
     background: rgba(232,160,32,0.06);
     flex-shrink: 0;
     touch-action: none;
+    display: none;
   }
   #sidebar-resizer::before { width: 3px; height: 40px; }
 }
 
 /* ── Fullscreen ── */
 body.is-fullscreen #watch-root { flex-direction: row; }
-body.is-fullscreen #video-area { flex: 1; height: 100vh; min-width: 0; }
+body.is-fullscreen #video-area { flex: 1; height: 100dvh; min-width: 0; }
 body.is-fullscreen #sidebar {
+  order: 2;
   display: none;
   width: 300px;
-  min-width: 200px;
+  min-width: 180px;
   max-width: 50vw;
-  height: 100vh;
-  max-height: 100vh;
+  height: 100dvh;
   border-top: none;
-  border-right: 1px solid rgba(232,160,32,0.12);
+  border-left: 1px solid rgba(232,160,32,0.12);
+  border-right: none;
   flex-shrink: 0;
   position: relative;
-  z-index: 100000; /* فوق الـ overlay في fullscreen */
+  z-index: 100000;
 }
 body.is-fullscreen #sidebar.open { display: flex; }
 body.is-fullscreen #fabs { display: flex; }
 body.is-fullscreen #sidebar-resizer {
-  width: 5px; height: 100%;
+  order: 1;
+  width: 20px;
+  height: 100dvh;
   cursor: ew-resize;
-  position: absolute;
-  right: 100%; top: 0;
+  border-right: 2px solid rgba(232,160,32,0.3);
+  border-left: none;
   border-top: none;
-  display: flex;
+  background: rgba(232,160,32,0.06);
+  flex-shrink: 0;
+  touch-action: none;
+  position: static; /* مش absolute */
+  display: none; /* JS يتحكم فيه */
 }
+body.is-fullscreen #sidebar.open + #sidebar-resizer { display: flex; }
 
 /* ══════════════════════════════════════
    Controls Overlay (فوق الفيديو)

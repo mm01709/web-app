@@ -913,9 +913,10 @@ function initSidebarResize() {
     const touch = e.touches ? e.touches[0] : e;
 
     if (isHorizontal()) {
-      // desktop/landscape: سحب أفقي لتغيير عرض الشات
-      const delta = _startX - touch.clientX;
-      const newW = Math.min(Math.max(_startW + delta, 150), Math.round(window.innerWidth * 0.65));
+      // الشات على اليمين — الـ resizer على يساره
+      // سحب لليسار (clientX↓) = تكبير الشات، لليمين (clientX↑) = تصغيره
+      const delta = touch.clientX - _startX;
+      const newW = Math.min(Math.max(_startW - delta, 150), Math.round(window.innerWidth * 0.65));
       sidebar.style.width = newW + "px";
       sidebar.style.flex = "none";
     } else {
@@ -938,6 +939,20 @@ function initSidebarResize() {
 
   resizer.addEventListener("mousedown", onStart);
   resizer.addEventListener("touchstart", onStart, { passive: false });
+
+  // double-click/tap = reset الحجم للافتراضي
+  let _lastTap = 0;
+  function onReset() {
+    sidebar.style.width = "";
+    sidebar.style.height = "";
+    sidebar.style.flex = "";
+  }
+  resizer.addEventListener("dblclick", onReset);
+  resizer.addEventListener("touchend", (e) => {
+    const now = Date.now();
+    if (now - _lastTap < 350) onReset();
+    _lastTap = now;
+  });
 }
 
 function toggleFullscreen() {
