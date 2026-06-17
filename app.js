@@ -792,6 +792,11 @@ function initVideoOverlay() {
   try { $("fab-chat").onclick = () => toggleChat(); } catch(_) {}
   $("btn-toggle-chat").onclick = () => toggleChat();
 
+  // حالة أولية لزرار الشات
+  if (_isDesktop()) {
+    $("btn-toggle-chat").classList.add("chat-open"); // مفتوح في desktop افتراضياً
+  }
+
   // Room code in overlay top
   try { $("ov-room-code").textContent = roomId || ""; } catch(_) {}
 
@@ -894,11 +899,26 @@ function _isLandscapeOrFs() {
     || document.body.classList.contains("is-fullscreen");
 }
 
+function _isDesktop() {
+  return window.innerWidth > 768 && !document.body.classList.contains("is-fullscreen");
+}
+
 function toggleChat(forceOpen) {
   const sb = $("sidebar");
   if (!sb) return;
-  const willOpen = forceOpen !== undefined ? forceOpen : !sb.classList.contains("open");
-  sb.classList.toggle("open", willOpen);
+
+  let willOpen;
+  if (_isDesktop()) {
+    // desktop: الشات مفتوح افتراضياً — نتحكم بـ chat-hidden على body
+    const hidden = document.body.classList.contains("chat-hidden");
+    willOpen = forceOpen !== undefined ? forceOpen : hidden; // لو hidden=true نفتحه
+    document.body.classList.toggle("chat-hidden", !willOpen);
+  } else {
+    // mobile / fullscreen: نتحكم بـ .open على sidebar
+    willOpen = forceOpen !== undefined ? forceOpen : !sb.classList.contains("open");
+    sb.classList.toggle("open", willOpen);
+  }
+
   try { $("fb-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
   try { $("fab-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
   try { $("btn-toggle-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
@@ -924,15 +944,22 @@ function initSidebarResize() {
 
   function updateResizerVisibility() {
     const horiz = isHorizontal();
-    // أظهر الـ resizer دايماً في desktop/landscape، وفي portrait لما الشات مفتوح
-    const show = horiz || sidebar.classList.contains("open");
-    resizer.style.display = show ? "flex" : "none";
+    const chatVisible = _isDesktop()
+      ? !document.body.classList.contains("chat-hidden")
+      : sidebar.classList.contains("open");
+    const show = horiz ? chatVisible : chatVisible; // في portrait: بس لما مفتوح
+    resizer.classList.toggle("visible", show);
+    if (!horiz) {
+      // portrait: inline style لأن CSS مش بيتحكم فيه بـ class في portrait
+      resizer.style.display = show ? "flex" : "none";
+    } else {
+      resizer.style.display = ""; // الـ CSS يتحكم
+    }
   }
 
-  // أحدّث عند فتح/إغلاق الشات
-  const _origToggle = window._toggleChatHook;
   const _resizerObserver = new MutationObserver(() => updateResizerVisibility());
   _resizerObserver.observe(sidebar, { attributes: true, attributeFilter: ["class"] });
+  _resizerObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
   updateResizerVisibility();
 
   let _didDrag = false;
@@ -1033,7 +1060,11 @@ function _onFullscreenChange() {
   } else {
     try { $("fb-fullscreen").textContent = "⛶"; } catch(_) {}
     try { screen.orientation?.unlock?.(); } catch(_) {}
-    toggleChat(false);
+    // عند الخروج من fullscreen: أغلق الشات (في desktop هيفتح تلقائياً بالـ CSS)
+    const sb = $("sidebar");
+    if (sb) sb.classList.remove("open");
+    try { $("btn-toggle-chat").classList.remove("chat-open"); } catch(_) {}
+    try { $("fb-chat").classList.remove("chat-open"); } catch(_) {}
   }
 }
 

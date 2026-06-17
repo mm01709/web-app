@@ -352,41 +352,13 @@ input::placeholder { color: var(--white24); }
   #resizer-close { display: none !important; }
 }
 
-/* ── Desktop (> 768px): الشات دايماً على اليمين ── */
-@media (min-width: 769px) {
-  #watch-root { flex-direction: row; }
-  #video-area { flex: 1; height: 100%; min-width: 0; }
-  #sidebar {
-    order: 2; /* اليمين في LTR context */
-    width: 320px;
-    min-width: 200px;
-    max-width: 50vw;
-    height: 100%;
-    max-height: 100%;
-    border-top: none;
-    border-left: 1px solid rgba(232,160,32,0.12);
-    border-right: none;
-    flex-shrink: 0;
-    display: flex !important;
-    position: relative;
-  }
-  #fabs { display: none; }
-  #sidebar-resizer {
-    order: 1;
-    width: 14px;
-    height: 100%;
-    cursor: ew-resize;
-    border-top: none;
-    border-right: 2px solid rgba(232,160,32,0.3);
-    border-left: none;
-    background: rgba(232,160,32,0.06);
-    flex-shrink: 0;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  #sidebar-resizer::before { width: 4px; height: 48px; }
-}
+/* ══════════════════════════════════════════
+   LAYOUT MODES
+   portrait mobile  → column, sidebar under video, toggle with .open
+   landscape mobile → row, sidebar right, toggle with .open
+   desktop          → row, sidebar right, toggle with body.chat-hidden
+   fullscreen       → row, sidebar right, toggle with .open
+══════════════════════════════════════════ */
 
 /* ── Landscape موبايل ── */
 @media (orientation: landscape) and (max-width: 768px) {
@@ -394,33 +366,63 @@ input::placeholder { color: var(--white24); }
   #video-area { flex: 1; height: 100dvh; min-width: 0; }
   #sidebar {
     order: 2;
-    width: 260px;
-    min-width: 150px;
-    max-width: 60vw;
-    height: 100dvh;
-    max-height: 100dvh;
+    width: 260px; min-width: 150px; max-width: 60vw;
+    height: 100dvh; max-height: 100dvh;
     border-top: none;
     border-left: 1px solid rgba(232,160,32,0.12);
     border-right: none;
-    flex-shrink: 0;
-    position: relative;
+    flex-shrink: 0; position: relative;
     display: none;
   }
   #sidebar.open { display: flex; }
   #sidebar-resizer {
     order: 1;
-    width: 20px;
-    height: 100%;
+    width: 20px; height: 100%;
     cursor: ew-resize;
     border-top: none;
     border-right: 2px solid rgba(232,160,32,0.3);
     border-left: none;
     background: rgba(232,160,32,0.06);
-    flex-shrink: 0;
-    touch-action: none;
+    flex-shrink: 0; touch-action: none;
     display: none;
   }
+  #sidebar.open ~ #sidebar-resizer,
+  #sidebar-resizer.visible { display: flex; }
   #sidebar-resizer::before { width: 3px; height: 40px; }
+}
+
+/* ── Desktop (> 768px) ── */
+@media (min-width: 769px) {
+  #watch-root { flex-direction: row; }
+  #video-area { flex: 1; height: 100%; min-width: 0; }
+  #sidebar {
+    order: 2;
+    width: 320px; min-width: 200px; max-width: 50vw;
+    height: 100%; max-height: 100%;
+    border-top: none;
+    border-left: 1px solid rgba(232,160,32,0.12);
+    border-right: none;
+    flex-shrink: 0;
+    display: flex; /* يظهر بدون .open */
+    position: relative;
+  }
+  /* يختفي لما نضيف chat-hidden على body */
+  body.chat-hidden #sidebar { display: none; }
+  #fabs { display: none; }
+  #sidebar-resizer {
+    order: 1;
+    width: 14px; height: 100%;
+    cursor: ew-resize;
+    border-top: none;
+    border-right: 2px solid rgba(232,160,32,0.3);
+    border-left: none;
+    background: rgba(232,160,32,0.06);
+    flex-shrink: 0; touch-action: none;
+    user-select: none; -webkit-user-select: none;
+    display: flex; /* دايماً ظاهر في desktop */
+  }
+  body.chat-hidden #sidebar-resizer { display: none; }
+  #sidebar-resizer::before { width: 4px; height: 48px; }
 }
 
 /* ── Fullscreen ── */
@@ -428,35 +430,29 @@ body.is-fullscreen #watch-root { flex-direction: row; }
 body.is-fullscreen #video-area { flex: 1; height: 100dvh; min-width: 0; }
 body.is-fullscreen #sidebar {
   order: 2;
-  display: none;
-  width: 300px;
-  min-width: 180px;
-  max-width: 50vw;
+  width: 300px; min-width: 180px; max-width: 50vw;
   height: 100dvh;
   border-top: none;
   border-left: 1px solid rgba(232,160,32,0.12);
   border-right: none;
-  flex-shrink: 0;
-  position: relative;
+  flex-shrink: 0; position: relative;
   z-index: 100000;
+  display: none;
 }
 body.is-fullscreen #sidebar.open { display: flex; }
 body.is-fullscreen #fabs { display: flex; }
 body.is-fullscreen #sidebar-resizer {
   order: 1;
-  width: 20px;
-  height: 100dvh;
+  width: 20px; height: 100dvh;
   cursor: ew-resize;
   border-right: 2px solid rgba(232,160,32,0.3);
-  border-left: none;
-  border-top: none;
+  border-left: none; border-top: none;
   background: rgba(232,160,32,0.06);
-  flex-shrink: 0;
-  touch-action: none;
-  position: static; /* مش absolute */
-  display: none; /* JS يتحكم فيه */
+  flex-shrink: 0; touch-action: none;
+  position: static;
+  display: none;
 }
-body.is-fullscreen #sidebar.open + #sidebar-resizer { display: flex; }
+body.is-fullscreen #sidebar-resizer.visible { display: flex; }
 
 /* ══════════════════════════════════════
    Controls Overlay (فوق الفيديو)
@@ -661,31 +657,29 @@ body.is-fullscreen #video-overlay,
 #fab-voice.in-voice { background: #e74c3c; }
 #fab-mute  { background: rgba(0,0,0,0.65); color: #fff; border: 1.5px solid rgba(255,255,255,0.2) !important; }
 #fab-mute.muted { background: #e74c3c; }
-/* زرار الشات الثابت دايماً */
+/* زرار الشات الثابت — يظهر في كل الأوضاع */
 #btn-toggle-chat {
   position: fixed;
   bottom: 20px;
   right: 16px;
-  width: 50px; height: 50px;
+  width: 48px; height: 48px;
   border-radius: 50%;
-  border: none;
-  background: rgba(232,160,32,0.9);
+  border: 2px solid rgba(232,160,32,0.4);
+  background: rgba(14,14,18,0.92);
   color: #fff;
-  font-size: 22px;
+  font-size: 20px;
   cursor: pointer;
-  z-index: 500;
+  z-index: 10000;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 3px 14px rgba(0,0,0,0.5);
-  transition: transform 0.15s, background 0.2s;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.6);
+  transition: transform 0.15s, background 0.2s, border-color 0.2s;
+  backdrop-filter: blur(8px);
 }
+#btn-toggle-chat:hover  { background: rgba(232,160,32,0.15); }
 #btn-toggle-chat:active { transform: scale(0.92); }
 #btn-toggle-chat.chat-open {
-  background: var(--gold);
-  box-shadow: 0 0 0 3px rgba(232,160,32,0.4), 0 3px 14px rgba(0,0,0,0.5);
-}
-/* في desktop الشات دايماً مفتوح — نخبي الزرار */
-@media (min-width: 769px) {
-  #btn-toggle-chat { display: none; }
+  background: rgba(232,160,32,0.25);
+  border-color: var(--gold);
 }
 
 /* ══════════════════════════════════════
