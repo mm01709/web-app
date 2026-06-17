@@ -292,25 +292,27 @@ input::placeholder { color: var(--white24); }
 }
 #sidebar.open { display: flex; }
 
-/* مقبض الـ resize للشات في portrait */
+/* مقبض resize الشات — portrait: شريط أفقي بين الفيديو والشات */
 #sidebar-resizer {
+  display: none; /* JS يتحكم فيه */
   width: 100%;
-  height: 6px;
-  background: rgba(232,160,32,0.15);
+  height: 10px;
+  background: rgba(232,160,32,0.12);
+  border-top: 2px solid rgba(232,160,32,0.3);
   cursor: ns-resize;
   flex-shrink: 0;
-  display: none;
   align-items: center;
   justify-content: center;
-  border-top: 1px solid rgba(232,160,32,0.2);
+  touch-action: none;
+  z-index: 20;
 }
 #sidebar-resizer::before {
   content: '';
-  width: 36px; height: 3px;
-  background: rgba(232,160,32,0.4);
+  width: 40px; height: 3px;
+  background: rgba(232,160,32,0.5);
   border-radius: 3px;
+  display: block;
 }
-#sidebar.open #sidebar-resizer { display: flex; }
 
 /* ── Desktop (> 768px): الشات دايماً ظاهر على اليمين ── */
 @media (min-width: 769px) {
@@ -330,24 +332,22 @@ input::placeholder { color: var(--white24); }
     position: relative;
   }
   #fabs { display: none; }
-  /* مقبض resize جانبي على desktop */
+  /* مقبض resize جانبي على desktop — شريط رأسي بين الفيديو والشات */
   #sidebar-resizer {
-    width: 5px;
+    width: 8px;
     height: 100%;
     cursor: ew-resize;
-    position: absolute;
-    right: 100%;
-    top: 0;
     border-top: none;
-    border-right: 1px solid rgba(232,160,32,0.2);
-    background: rgba(232,160,32,0.08);
+    border-right: none;
+    border-left: 1px solid rgba(232,160,32,0.2);
+    background: rgba(232,160,32,0.06);
+    flex-shrink: 0;
+    order: 0; /* بين video-area والـ sidebar */
+    touch-action: none;
   }
   #sidebar-resizer::before {
-    width: 3px; height: 36px;
-    background: rgba(232,160,32,0.4);
-    border-radius: 3px;
+    width: 3px; height: 40px;
   }
-  #sidebar.open #sidebar-resizer { display: flex; }
 }
 
 /* ── Landscape موبايل ── */
@@ -366,16 +366,15 @@ input::placeholder { color: var(--white24); }
     position: relative;
   }
   #sidebar-resizer {
-    width: 5px; height: 100%;
+    width: 8px; height: 100%;
     cursor: ew-resize;
-    position: absolute;
-    right: 100%; top: 0;
     border-top: none;
-    border-right: 1px solid rgba(232,160,32,0.2);
-    background: rgba(232,160,32,0.08);
-    display: flex;
+    border-left: 1px solid rgba(232,160,32,0.2);
+    background: rgba(232,160,32,0.06);
+    flex-shrink: 0;
+    touch-action: none;
   }
-  #sidebar-resizer::before { width: 3px; height: 36px; border-radius: 3px; }
+  #sidebar-resizer::before { width: 3px; height: 40px; }
 }
 
 /* ── Fullscreen ── */
