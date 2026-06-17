@@ -1135,7 +1135,7 @@ async function loadMediaList() {
   const list = $("media-list");
   list.innerHTML = '<div class="media-loading">جاري التحميل...</div>';
   try {
-    const res = await fetch(`${R2_WORKER}/api/r2/list?prefix=videos`);
+    const res = await fetch(`${R2_WORKER}/api/r2/list?prefix=videos&chatId=watchparty`);
     if (!res.ok) throw new Error("فشل التحميل");
     const data = await res.json();
     let items = data.objects || data.items || (Array.isArray(data) ? data : []);
