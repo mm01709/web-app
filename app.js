@@ -686,8 +686,14 @@ function tryAutoJoin() {
       }
       // نستنى room_state يوصل (بييجي بعد connect بـ ~300ms) بعدين نحمّل
       setTimeout(() => {
-        if (parsed) { videoSrc = parsed; loadPlayer(parsed); }
-        else if (videoSrc) loadPlayer(videoSrc);
+        if (parsed) {
+          videoSrc = parsed;
+          loadPlayer(parsed);
+          // نبعت الـ source للسيرفر عشان الأعضاء التانيين يشوفوا الفيديو
+          send({ type: 'set_source', roomId, username, source: parsed });
+        } else if (videoSrc) {
+          loadPlayer(videoSrc);
+        }
       }, 600);
     })
     .catch((e) => {
