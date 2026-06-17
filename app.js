@@ -195,9 +195,13 @@ function handleMessage(msg) {
     case "user_left": addEvent(msg.username, "left"); break;
     case "members": renderMembers(msg.members); break;
     case "reaction": floatReaction(msg.emoji); break;
-    case "room_state":
-      // لو منضم جديد وماعندوش مصدر، استقبله من الغرفة
-      if (!videoSrc && msg.source) {
+    case "room_state": {
+      // لو جينا من URL params ما نسمحش للغرفة تطغى على الفيديو
+      const _autoUrl = new URLSearchParams(window.location.search).get("url");
+      if (_autoUrl) {
+        // auto-join: نحمّل الفيديو من الـ URL params بس
+        if (!player && videoSrc) loadPlayer(videoSrc);
+      } else if (!videoSrc && msg.source) {
         videoSrc = msg.source;
         loadPlayer(videoSrc);
       }
@@ -207,7 +211,7 @@ function handleMessage(msg) {
           if (msg.isPlaying) setTimeout(() => applySync("play", msg.currentTime), 400);
         }, 800);
       }
-      break;
+      break; }
     case "source":
       // منشئ الغرفة غيّر/حدّد الفيديو
       if (msg.source) { videoSrc = msg.source; loadPlayer(videoSrc); }
