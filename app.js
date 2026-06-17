@@ -922,6 +922,12 @@ function toggleChat(forceOpen) {
   try { $("fb-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
   try { $("fab-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
   try { $("btn-toggle-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
+
+  // أخفي الـ notification لما الشات يفتح
+  if (willOpen) {
+    const notif = document.getElementById("chat-notif");
+    if (notif) notif.classList.remove("show");
+  }
 }
 
 function toggleSidebarOverlay() { toggleChat(); } // backward compat
@@ -1087,6 +1093,30 @@ function addChat(from, text, self) {
       el("div", { class: "text", text }))
   ));
   feed.scrollTop = feed.scrollHeight;
+
+  // لو الشات مغلق، اعرض notification bubble على الشمال
+  if (!self && !_isChatVisible()) showChatNotif(from, text);
+}
+
+function _isChatVisible() {
+  if (_isDesktop()) return !document.body.classList.contains("chat-hidden");
+  const sb = $("sidebar");
+  return sb ? sb.classList.contains("open") : false;
+}
+
+let _notifTimer = null;
+function showChatNotif(from, text) {
+  let notif = document.getElementById("chat-notif");
+  if (!notif) {
+    notif = document.createElement("div");
+    notif.id = "chat-notif";
+    notif.onclick = () => { toggleChat(true); notif.classList.remove("show"); };
+    document.body.appendChild(notif);
+  }
+  notif.innerHTML = `<span class="chat-notif-name">${from}</span><span class="chat-notif-text">${text}</span>`;
+  notif.classList.add("show");
+  clearTimeout(_notifTimer);
+  _notifTimer = setTimeout(() => notif.classList.remove("show"), 4000);
 }
 
 function addEvent(who, action, time) {

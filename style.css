@@ -1245,6 +1245,53 @@ body.is-fullscreen #video-overlay,
   color: #fff;
 }
 
+/* Chat notification bubble */
+#chat-notif {
+  position: fixed;
+  left: 12px;
+  bottom: 24px;
+  max-width: 220px;
+  background: rgba(14,14,18,0.95);
+  border: 1px solid rgba(232,160,32,0.35);
+  border-radius: 16px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 10000;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.55);
+  opacity: 0;
+  transform: translateX(-110%);
+  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+}
+#chat-notif.show {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+#chat-notif::before {
+  content: '💬';
+  position: absolute;
+  top: -8px; left: 12px;
+  font-size: 14px;
+}
+.chat-notif-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+}
+.chat-notif-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
 /* Floating reaction */
 .float-reaction {
   position: fixed;
