@@ -353,10 +353,29 @@ function buildSidebar() {
   $("sb-send").onclick = sendChat;
   $("sb-emoji-btn").onclick = toggleEmojiPicker;
 
-  // زر الموبايل
-  $("sb-toggle").onclick = () => $("sidebar").classList.toggle("floating");
+  // زر الموبايل + fullscreen
+  $("sb-toggle").onclick = () => {
+    const sb = $("sidebar");
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      sb.classList.toggle("open");
+    } else {
+      sb.classList.toggle("floating");
+    }
+  };
+
+  // لما يدخل/يخرج fullscreen
+  document.addEventListener("fullscreenchange", _onFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", _onFullscreenChange);
 
   addEvent(null, "welcome");
+}
+
+function _onFullscreenChange() {
+  const sb = $("sidebar");
+  if (!sb) return;
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    sb.classList.remove("open");
+  }
 }
 
 function renderMembers(members) {

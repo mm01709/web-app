@@ -338,8 +338,8 @@ body.videoonly #screen-join { display: none !important; }
 body.videoonly .watch-layout { display: block; height: 100%; }
 body.videoonly .video-area   { height: 100%; width: 100%; }
 
-/* ───────── موبايل ───────── */
-@media (max-width: 768px) {
+/* ───────── موبايل portrait ───────── */
+@media (max-width: 768px) and (orientation: portrait) {
   .watch-layout { flex-direction: column; }
 
   .video-area { flex: none; height: 38vh; }
@@ -351,9 +351,53 @@ body.videoonly .video-area   { height: 100%; width: 100%; }
     border-top: 1px solid #ffffff12;
   }
 
-  /* وضع الشات المنبثق فوق الفيديو (اختياري عبر الزر) */
   #sidebar.floating {
     position: fixed; inset: 0; z-index: 40; height: 100%;
   }
   #sb-toggle { display: flex; }
+}
+
+/* ───────── موبايل landscape ───────── */
+@media (max-width: 1024px) and (orientation: landscape) {
+  .watch-layout { flex-direction: row; }
+
+  .video-area { flex: 1; height: 100%; }
+
+  #sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    border-right: none;
+    border-left: 1px solid #ffffff12;
+  }
+}
+
+/* ───────── Fullscreen: sidebar كـ overlay ───────── */
+:fullscreen #sidebar,
+:-webkit-full-screen #sidebar,
+:-moz-full-screen #sidebar {
+  position: fixed;
+  top: 0; right: 0;
+  width: 280px;
+  height: 100%;
+  z-index: 9999;
+  background: rgba(22, 22, 28, 0.92);
+  backdrop-filter: blur(8px);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+
+:fullscreen #sidebar.open,
+:-webkit-full-screen #sidebar.open,
+:-moz-full-screen #sidebar.open {
+  transform: translateX(0);
+}
+
+:fullscreen #sb-toggle,
+:-webkit-full-screen #sb-toggle,
+:-moz-full-screen #sb-toggle {
+  display: flex !important;
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 99999;
 }
