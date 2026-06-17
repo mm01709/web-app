@@ -330,6 +330,14 @@ input::placeholder { color: #ffffff35; }
 }
 .voice-mute-btn.muted { background: #e74c3c30; border-color: #e74c3c60; color: #ff6b6b; }
 
+/* ───────── Video-only mode (Flutter embed) ───────── */
+body.videoonly #sidebar,
+body.videoonly #sb-toggle,
+body.videoonly #screen-join { display: none !important; }
+
+body.videoonly .watch-layout { display: block; height: 100%; }
+body.videoonly .video-area   { height: 100%; width: 100%; }
+
 /* ───────── موبايل ───────── */
 @media (max-width: 768px) {
   .watch-layout { flex-direction: column; }

@@ -678,9 +678,45 @@ function tryAutoJoin() {
   return true;
 }
 
+// ============================================
+//  Video-only mode — يخفي كل حاجة غير الفيديو
+//  يُفعَّل بـ ?videoonly=1
+// ============================================
+function applyVideoOnlyMode() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("videoonly") !== "1") return;
+
+  // أضف class على الـ body يخفي السايدبار والأزرار
+  document.body.classList.add("videoonly");
+
+  // أبلغ Flutter بأحداث الفيديو (play/pause/seek) عبر postMessage
+  const origEmit = window.emit;
+  window.emit = function(action, time) {
+    origEmit?.(action, time);
+    try {
+      // للـ Android JavaScriptChannel اسمه FlutterBridge
+      if (window.FlutterBridge) {
+        FlutterBridge.postMessage(JSON.stringify({ action, time }));
+      }
+    } catch(e) {}
+  };
+
+  // استقبل أوامر من Flutter عبر postMessage
+  window.addEventListener("message", (e) => {
+    try {
+      const cmd = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+      if (!cmd || !player) return;
+      if (cmd.action === "play")  { isSyncing = true; player.seek(cmd.time); player.play();  setTimeout(() => isSyncing = false, 600); }
+      if (cmd.action === "pause") { isSyncing = true; player.seek(cmd.time); player.pause(); setTimeout(() => isSyncing = false, 600); }
+      if (cmd.action === "seek")  { isSyncing = true; player.seek(cmd.time);                 setTimeout(() => isSyncing = false, 600); }
+    } catch(e) {}
+  });
+}
+
 // ── بدء ──
 initJoinScreen();
 initQualityBar();
+applyVideoOnlyMode();
 tryAutoJoin();
 =======
 // ── بدء ──
