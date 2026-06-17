@@ -658,9 +658,10 @@ function buildSidebar() {
   initVideoOverlay();
   initSidebarResize();
 
-  // في portrait: إغلاق الشات لما تضغط على الفيديو
+  // في portrait: إغلاق الشات لما تضغط على الفيديو (بس مش بعد drag)
   $("video-area")?.addEventListener("click", () => {
-    if (_isLandscapeOrFs()) return; // في landscape/fullscreen الشات جنب الفيديو مش overlay
+    if (_isLandscapeOrFs()) return;
+    if (window._sidebarDidDrag && window._sidebarDidDrag()) return; // كان بيسحب مش بيضغط
     const sb = $("sidebar");
     if (sb?.classList.contains("open")) toggleChat(false);
   });
@@ -933,8 +934,11 @@ function initSidebarResize() {
   _resizerObserver.observe(sidebar, { attributes: true, attributeFilter: ["class"] });
   updateResizerVisibility();
 
+  let _didDrag = false;
+
   function onStart(e) {
     _dragging = true;
+    _didDrag = false;
     const touch = e.touches ? e.touches[0] : e;
     _startX = touch.clientX;
     _startY = touch.clientY;
@@ -951,22 +955,19 @@ function initSidebarResize() {
   function onMove(e) {
     if (!_dragging) return;
     if (e.cancelable) e.preventDefault();
+    _didDrag = true;
     const touch = e.touches ? e.touches[0] : e;
 
     if (isHorizontal()) {
-      // الشات على اليمين — الـ resizer على يساره
-      // سحب لليسار (clientX↓) = تكبير الشات، لليمين (clientX↑) = تصغيره
       const delta = touch.clientX - _startX;
       const newW = Math.min(Math.max(_startW - delta, 150), Math.round(window.innerWidth * 0.65));
       sidebar.style.width = newW + "px";
       sidebar.style.flex = "none";
     } else {
-      // portrait: سحب عمودي لتغيير ارتفاع الشات
-      // لفوق = تكبير (clientY بيقل)، لتحت = تصغير (clientY بيكبر)
       const delta = _startY - touch.clientY;
       const maxH = Math.round(window.innerHeight * 0.82);
       const newH = Math.min(Math.max(_startH + delta, 80), maxH);
-      sidebar.style.maxHeight = maxH + "px"; // نلغي الـ CSS max-height أثناء الدراج
+      sidebar.style.maxHeight = maxH + "px";
       sidebar.style.flex = "0 0 " + newH + "px";
       sidebar.style.height = newH + "px";
     }
@@ -980,8 +981,18 @@ function initSidebarResize() {
     document.removeEventListener("touchend", onEnd);
   }
 
+  // منع video-area click من إغلاق الشات بعد drag
+  window._sidebarDidDrag = () => _didDrag;
+
   resizer.addEventListener("mousedown", onStart);
   resizer.addEventListener("touchstart", onStart, { passive: false });
+
+  // زرار إغلاق الشات في الـ resizer
+  const closeBtn = document.getElementById("resizer-close");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", (e) => { e.stopPropagation(); toggleChat(false); });
+    closeBtn.addEventListener("touchend", (e) => { e.stopPropagation(); e.preventDefault(); toggleChat(false); });
+  }
 
   // double-click/tap = reset الحجم للافتراضي
   let _lastTap = 0;
@@ -1130,10 +1141,7 @@ function initVoiceBar() {
   const btnVoice = $("btn-voice");
   const btnMute = $("btn-mute");
 
-  btnVoice.addEventListener("click", () => {
-    if (!inVoice) joinVoice();
-    else leaveVoice();
-  });
+  btnVoice.addEventListener("click", () => _doVoiceToggle());
 
   btnMute.addEventListener("click", () => {
     micMuted = !micMuted;

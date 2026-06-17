@@ -327,6 +327,30 @@ input::placeholder { color: var(--white24); }
   border-radius: 4px;
   display: block;
 }
+#resizer-close {
+  position: absolute;
+  left: 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.6);
+  border-radius: 6px;
+  font-size: 13px;
+  padding: 2px 8px;
+  cursor: pointer;
+  line-height: 1.6;
+  display: none; /* بيظهر في portrait فقط */
+}
+/* في portrait: اظهر زرار الإغلاق */
+@media (orientation: portrait) {
+  #resizer-close { display: block; }
+}
+/* في desktop/landscape: خبّي الزرار */
+@media (min-width: 769px) {
+  #resizer-close { display: none !important; }
+}
+@media (orientation: landscape) and (max-width: 768px) {
+  #resizer-close { display: none !important; }
+}
 
 /* ── Desktop (> 768px): الشات دايماً على اليمين ── */
 @media (min-width: 769px) {
