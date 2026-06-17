@@ -70,6 +70,13 @@
           <option value="tiny">144p</option>
         </select>
       </div>
+      <!-- شريط التحكم العائم (landscape / fullscreen) -->
+      <div id="float-bar">
+        <button id="fb-rotate" title="تدوير الشاشة">⟳</button>
+        <button id="fb-chat" title="الشات">💬</button>
+        <button id="fb-mute" title="كتم الميكروفون" style="display:none">🎤</button>
+        <button id="fb-fullscreen" title="ملء الشاشة">⛶</button>
+      </div>
     </div>
 
     <!-- الشريط الجانبي -->
@@ -96,14 +103,11 @@
       <div class="sb-emoji-bar" id="sb-emoji-bar"></div>
 
       <div class="sb-input-row">
-        <button class="sb-tool" id="sb-emoji-btn" title="إيموجي">😊</button>
         <input type="text" id="sb-chat-input" placeholder="اكتب رسالة..." maxlength="300" />
         <button class="sb-send" id="sb-send">➤</button>
       </div>
     </aside>
 
-    <!-- زر إظهار/إخفاء الشات (للموبايل) -->
-    <button id="sb-toggle" title="الشات">💬</button>
   </div>
 </div>
 

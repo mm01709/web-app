@@ -297,22 +297,42 @@ function loadHtml5(src) {
 }
 
 // ── YouTube ──
+let _ytInstance = null; // نحتفظ بالـ YT.Player instance عشان نعمل destroy
+
 function loadYouTube(videoId) {
   showQualityBar(true);
   $("html5-video").style.display = "none";
-  $("yt-player").style.display = "block";
+
+  // destroy الـ player القديم لو موجود
+  if (_ytInstance) {
+    try { _ytInstance.destroy(); } catch(_) {}
+    _ytInstance = null;
+    player = null;
+  }
+
+  // أعد إنشاء الـ div عشان YT.Player يشتغل صح
+  const wrap = $("player-wrap");
+  let ytDiv = $("yt-player");
+  if (ytDiv) ytDiv.remove();
+  ytDiv = document.createElement("div");
+  ytDiv.id = "yt-player";
+  wrap.appendChild(ytDiv);
+  ytDiv.style.display = "block";
 
   const create = () => {
     const yt = new YT.Player("yt-player", {
       videoId,
-      playerVars: { autoplay: 0, controls: 1, rel: 0, playsinline: 1 },
+      width: "100%",
+      height: "100%",
+      playerVars: { autoplay: 0, controls: 1, rel: 0, playsinline: 1, enablejsapi: 1 },
       events: {
         onReady: () => {
+          _ytInstance = yt;
           player = {
-            play: () => yt.playVideo(),
-            pause: () => yt.pauseVideo(),
-            seek: (t) => yt.seekTo(t, true),
-            getTime: () => yt.getCurrentTime(),
+            play: () => { try { yt.playVideo(); } catch(_) {} },
+            pause: () => { try { yt.pauseVideo(); } catch(_) {} },
+            seek: (t) => { try { yt.seekTo(t, true); } catch(_) {} },
+            getTime: () => { try { return yt.getCurrentTime() || 0; } catch(_) { return 0; } },
             _yt: yt,
           };
         },
@@ -320,8 +340,20 @@ function loadYouTube(videoId) {
           if (isSyncing || !player) return;
           try {
             const t = yt.getCurrentTime();
+            // BUFFERING(3) نتجاهله — مش حدث حقيقي من اليوزر
             if (e.data === YT.PlayerState.PLAYING) emit("play", t);
-            else if (e.data === YT.PlayerState.PAUSED) emit("pause", t);
+            else if (e.data === YT.PlayerState.PAUSED) {
+              // نتجاهل PAUSED لو جاءت أثناء الـ buffering (بعد seek)
+              // نستنى 200ms ونتحقق إن الـ player فعلاً وقف
+              setTimeout(() => {
+                if (!isSyncing && player) {
+                  try {
+                    const state = yt.getPlayerState();
+                    if (state === YT.PlayerState.PAUSED) emit("pause", yt.getCurrentTime());
+                  } catch(_) {}
+                }
+              }, 200);
+            }
           } catch(_) {}
         },
       },
@@ -329,7 +361,6 @@ function loadYouTube(videoId) {
   };
 
   if (window.YT && YT.Player) { create(); return; }
-  // حمّل YouTube IFrame API مرة واحدة
   if (!ytApiLoading) {
     ytApiLoading = true;
     const tag = document.createElement("script");
@@ -349,12 +380,35 @@ function emit(action, time) {
 function applySync(action, time) {
   if (!player) return;
   isSyncing = true;
+  clearTimeout(applySync._t);
+
   const TOL = 1.5;
-  if (action === "seek" || Math.abs(player.getTime() - time) > TOL) player.seek(time);
-  if (action === "play") player.play();
-  else if (action === "pause") player.pause();
-  setTimeout(() => { isSyncing = false; }, 600);
+  const needSeek = action === "seek" || Math.abs(player.getTime() - time) > TOL;
+
+  if (action === "play") {
+    if (needSeek) {
+      player.seek(time);
+      // نستنى الـ seek يخلص قبل الـ play — مهم مع YouTube IFrame API
+      applySync._t = setTimeout(() => {
+        if (player) player.play();
+        // نفضل isSyncing=true لحد ما YouTube يطلق PLAYING event ويتجاهلها
+        applySync._t = setTimeout(() => { isSyncing = false; }, 1500);
+      }, 500);
+    } else {
+      player.play();
+      applySync._t = setTimeout(() => { isSyncing = false; }, 1500);
+    }
+  } else if (action === "pause") {
+    if (needSeek) player.seek(time);
+    player.pause();
+    applySync._t = setTimeout(() => { isSyncing = false; }, 800);
+  } else {
+    // seek فقط
+    player.seek(time);
+    applySync._t = setTimeout(() => { isSyncing = false; }, 600);
+  }
 }
+applySync._t = null;
 
 // ============================================
 //  الشريط الجانبي
@@ -382,17 +436,52 @@ function buildSidebar() {
   const input = $("sb-chat-input");
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
   $("sb-send").onclick = sendChat;
-  $("sb-emoji-btn").onclick = toggleEmojiPicker;
 
-  // زر الموبايل + fullscreen
-  $("sb-toggle").onclick = () => {
-    const sb = $("sidebar");
-    if (document.fullscreenElement || document.webkitFullscreenElement) {
-      sb.classList.toggle("open");
-    } else {
-      sb.classList.toggle("floating");
+  // زر الشات على الموبايل (portrait)
+
+  // ── Float Bar ──────────────────────────────
+  // زر تدوير الشاشة
+  $("fb-rotate").onclick = () => {
+    if (!screen.orientation || !screen.orientation.lock) {
+      toast("⚠️ التدوير غير مدعوم في هذا المتصفح");
+      return;
     }
+    const cur = screen.orientation.type || "";
+    const target = cur.includes("landscape") ? "portrait" : "landscape";
+    screen.orientation.lock(target).catch(() => {
+      toast("⚠️ اقلب جهازك يدوياً");
+    });
   };
+
+  // زر الشات في الـ float bar
+  $("fb-chat").onclick = () => toggleSidebarOverlay();
+
+  // إغلاق الـ sidebar لما تضغط برا
+  document.addEventListener("click", (e) => {
+    const sb = $("sidebar");
+    if (sb.classList.contains("open") && !sb.contains(e.target) && e.target !== $("fb-chat")) {
+      sb.classList.remove("open");
+    }
+  });
+
+  // زر كتم المايك في الـ float bar
+  $("fb-mute").onclick = () => {
+    micMuted = !micMuted;
+    if (localStream) {
+      localStream.getAudioTracks().forEach(t => { t.enabled = !micMuted; });
+    }
+    const btn = $("fb-mute");
+    btn.textContent = micMuted ? "🔇" : "🎤";
+    btn.classList.toggle("muted", micMuted);
+    // مزامن مع الزر الجانبي
+    const btnMute = $("btn-mute");
+    btnMute.textContent = micMuted ? "🔇 أنت مكتوم" : "🎤";
+    btnMute.classList.toggle("muted", micMuted);
+    toast(micMuted ? "تم كتم الميكروفون 🔇" : "الميكروفون مفعّل 🎤");
+  };
+
+  // زر fullscreen
+  $("fb-fullscreen").onclick = toggleFullscreen;
 
   // لما يدخل/يخرج fullscreen
   document.addEventListener("fullscreenchange", _onFullscreenChange);
@@ -401,11 +490,36 @@ function buildSidebar() {
   addEvent(null, "welcome");
 }
 
+function toggleSidebarOverlay() {
+  $("sidebar").classList.toggle("open");
+}
+
+function toggleFullscreen() {
+  const el = document.documentElement;
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    (el.requestFullscreen || el.webkitRequestFullscreen || (() => {})).call(el);
+    $("fb-fullscreen").textContent = "✕";
+    // تدوير landscape تلقائياً عند fullscreen
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock("landscape").catch(() => {});
+    }
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
+    $("fb-fullscreen").textContent = "⛶";
+    if (screen.orientation && screen.orientation.unlock) {
+      screen.orientation.unlock();
+    }
+  }
+}
+
 function _onFullscreenChange() {
   const sb = $("sidebar");
   if (!sb) return;
-  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  if (!isFs) {
     sb.classList.remove("open");
+    try { $("fb-fullscreen").textContent = "⛶"; } catch(_) {}
+    try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(_) {}
   }
 }
 
@@ -471,16 +585,6 @@ function floatReaction(emoji) {
   setTimeout(() => e.remove(), 2300);
 }
 
-// منتقي الإيموجي
-let picker = null;
-function toggleEmojiPicker() {
-  if (picker) { picker.remove(); picker = null; return; }
-  picker = el("div", { class: "emoji-picker" });
-  EMOJI_SET.forEach(e => picker.appendChild(el("span", { class: "pe", text: e, onclick: () => {
-    $("sb-chat-input").value += e; $("sb-chat-input").focus();
-  } })));
-  $("sidebar").appendChild(picker);
-}
 
 // ============================================
 //  تحكم جودة YouTube
@@ -541,10 +645,25 @@ function initVoiceBar() {
 }
 
 async function joinVoice() {
+  // تحقق إن المتصفح يدعم getUserMedia
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    toast("⚠️ متصفحك لا يدعم المكالمات الصوتية");
+    return;
+  }
+
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
   } catch (e) {
-    toast("تعذر الوصول للميكروفون: " + (e.message || e));
+    const name = e.name || "";
+    if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+      toast("🔒 اسمح للموقع بالوصول للميكروفون من إعدادات المتصفح");
+    } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+      toast("🎙 لم يُعثر على ميكروفون — تأكد من توصيله");
+    } else if (name === "NotReadableError") {
+      toast("⚠️ الميكروفون مستخدم من تطبيق آخر");
+    } else {
+      toast("تعذر الوصول للميكروفون: " + (e.message || name || e));
+    }
     return;
   }
 
@@ -555,6 +674,10 @@ async function joinVoice() {
   $("btn-mute").style.display = "";
   $("btn-mute").textContent = "🎤";
   $("btn-mute").classList.remove("muted");
+  // أظهر زر الكتم في الـ float bar
+  $("fb-mute").style.display = "";
+  $("fb-mute").textContent = "🎤";
+  $("fb-mute").classList.remove("muted");
 
   send({ type: "voice_join", roomId, username });
   toast("انضممت للصوت 🎙");
@@ -574,6 +697,7 @@ function leaveVoice() {
   $("btn-voice").textContent = "🎙 صوت";
   $("btn-voice").classList.remove("active");
   $("btn-mute").style.display = "none";
+  $("fb-mute").style.display = "none";
 
   // امسح الـ audio elements
   $("remote-audios").innerHTML = "";
@@ -721,25 +845,13 @@ function tryAutoJoin() {
   document.getElementById("screen-watch").classList.add("active");
   try { buildSidebar(); } catch(e) {}
 
-  // placeholder حتى يتحمل الفيديو
-  const wrap = $("player-wrap");
-  if (wrap) {
-    wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ffffff60;font-size:14px">⏳ جاري الاتصال بالسيرفر...</div>';
-  }
-
   connect()
     .then(() => {
-      if (wrap) {
-        if (!$("yt-player")) {
-          wrap.innerHTML = '<video id="html5-video" playsinline style="width:100%;height:100%;background:#000;display:none"></video><div id="yt-player" style="width:100%;height:100%;display:none"></div>';
-        }
-      }
-      // نستنى room_state يوصل (بييجي بعد connect بـ ~300ms) بعدين نحمّل
+      // نستنى room_state يوصل (~300ms) ثم نحمّل الفيديو
       setTimeout(() => {
         if (parsed) {
           videoSrc = parsed;
           loadPlayer(parsed);
-          // نبعت الـ source للسيرفر عشان الأعضاء التانيين يشوفوا الفيديو
           send({ type: 'set_source', roomId, username, source: parsed });
         } else if (videoSrc) {
           loadPlayer(videoSrc);
@@ -748,7 +860,7 @@ function tryAutoJoin() {
     })
     .catch((e) => {
       console.error("connect failed:", e);
-      // لا نرجع لشاشة الدخول — نخلي الرسالة تظهر بس
+      const wrap = $("player-wrap");
       if (wrap) wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ff6b6b;font-size:14px">❌ تعذر الاتصال — حاول مرة أخرى</div>';
     });
 
