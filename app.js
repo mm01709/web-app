@@ -923,9 +923,11 @@ function initSidebarResize() {
       // portrait: سحب عمودي لتغيير ارتفاع الشات
       // لفوق = تكبير (clientY بيقل)، لتحت = تصغير (clientY بيكبر)
       const delta = _startY - touch.clientY;
-      const newH = Math.min(Math.max(_startH + delta, 80), Math.round(window.innerHeight * 0.82));
+      const maxH = Math.round(window.innerHeight * 0.82);
+      const newH = Math.min(Math.max(_startH + delta, 80), maxH);
+      sidebar.style.maxHeight = maxH + "px"; // نلغي الـ CSS max-height أثناء الدراج
+      sidebar.style.flex = "0 0 " + newH + "px";
       sidebar.style.height = newH + "px";
-      sidebar.style.flex = "none"; // منع flex: 1 من override الـ height
     }
   }
 
@@ -946,6 +948,7 @@ function initSidebarResize() {
     sidebar.style.width = "";
     sidebar.style.height = "";
     sidebar.style.flex = "";
+    sidebar.style.maxHeight = "";
   }
   resizer.addEventListener("dblclick", onReset);
   resizer.addEventListener("touchend", (e) => {
