@@ -643,7 +643,6 @@ function renderVoiceAvatars() {
   });
 }
 
-<<<<<<< HEAD
 // ============================================
 //  Auto-join من URL params
 //  مثال: ?room=ABC123&user=أحمد&url=https://youtu.be/xxx
@@ -727,8 +726,3 @@ initJoinScreen();
 initQualityBar();
 applyVideoOnlyMode();
 tryAutoJoin();
-=======
-// ── بدء ──
-initJoinScreen();
-initQualityBar();
->>>>>>> 59d23a610bd56ab0b725cc6c1599655e1ca4432c
