@@ -675,12 +675,13 @@ function tryAutoJoin() {
 
   connect()
     .then(() => {
-      if (videoSrc && wrap) wrap.innerHTML = '';
+      if (wrap) wrap.innerHTML = '';
       if (videoSrc) loadPlayer(videoSrc);
     })
-    .catch(() => {
-      document.getElementById("screen-watch").classList.remove("active");
-      document.getElementById("screen-join").classList.add("active");
+    .catch((e) => {
+      console.error("connect failed:", e);
+      // لا نرجع لشاشة الدخول — نخلي الرسالة تظهر بس
+      if (wrap) wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ff6b6b;font-size:14px">❌ تعذر الاتصال — حاول مرة أخرى</div>';
     });
 
   return true;
