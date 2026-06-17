@@ -890,12 +890,12 @@ body.videoonly .video-area   { height: 100%; width: 100%; }
 }
 
 /* ══════════════════════════════════════
-   Fullscreen (desktop + mobile)
+   Fullscreen — CSS + body.is-fullscreen (JS backup)
 ══════════════════════════════════════ */
 
-/* الـ layout يبقى flex row في fullscreen */
 :fullscreen .watch-layout,
-:-webkit-full-screen .watch-layout {
+:-webkit-full-screen .watch-layout,
+body.is-fullscreen .watch-layout {
   display: flex;
   flex-direction: row;
   height: 100vh;
@@ -903,19 +903,19 @@ body.videoonly .video-area   { height: 100%; width: 100%; }
 }
 
 :fullscreen .video-area,
-:-webkit-full-screen .video-area {
+:-webkit-full-screen .video-area,
+body.is-fullscreen .video-area {
   flex: 1;
   height: 100%;
   min-width: 0;
-  transition: flex 0.25s ease;
 }
 
-/* الـ sidebar جنب الفيديو — مش overlay */
+/* الـ sidebar جنب الفيديو مش overlay */
 :fullscreen #sidebar,
-:-webkit-full-screen #sidebar {
+:-webkit-full-screen #sidebar,
+body.is-fullscreen #sidebar {
   position: relative !important;
-  top: auto !important;
-  right: auto !important;
+  top: auto !important; right: auto !important;
   transform: none !important;
   width: 0;
   flex-shrink: 0;
@@ -927,20 +927,21 @@ body.videoonly .video-area   { height: 100%; width: 100%; }
 }
 
 :fullscreen #sidebar.open,
-:-webkit-full-screen #sidebar.open {
+:-webkit-full-screen #sidebar.open,
+body.is-fullscreen #sidebar.open {
   width: 280px;
   border-left: 1px solid rgba(232,160,32,0.15);
 }
 
-/* float bar دايماً ظاهر في fullscreen */
+/* float bar دايماً ظاهر */
 :fullscreen #float-bar,
-:-webkit-full-screen #float-bar {
-  display: flex;
+:-webkit-full-screen #float-bar,
+body.is-fullscreen #float-bar {
+  display: flex !important;
 }
 
-/* زر 💬 يتغير لما الشات مفتوح */
-:fullscreen #fb-chat.active,
-:-webkit-full-screen #fb-chat.active {
-  background: rgba(232,160,32,0.25);
-  border-color: rgba(232,160,32,0.5);
+/* زر الشات لما مفتوح */
+#fb-chat.active {
+  background: rgba(232,160,32,0.25) !important;
+  border-color: rgba(232,160,32,0.5) !important;
 }

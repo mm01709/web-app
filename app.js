@@ -730,16 +730,18 @@ function toggleFullscreen() {
 
 function _onFullscreenChange() {
   const sb = $("sidebar");
-  if (!sb) return;
   const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+
+  // class على body يتحكم في الـ layout
+  document.body.classList.toggle("is-fullscreen", isFs);
+  $("float-bar").style.display = isFs ? "flex" : "";
+
   if (!isFs) {
-    // خروج fullscreen — أغلق الشات وأرجع الأيقونة
-    sb.classList.remove("open");
+    if (sb) sb.classList.remove("open");
     try { $("fb-chat").classList.remove("active"); } catch(_) {}
     try { $("fb-fullscreen").textContent = "⛶"; } catch(_) {}
     try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(_) {}
   } else {
-    // دخل fullscreen — حدّث أيقونة الخروج
     try { $("fb-fullscreen").textContent = "✕"; } catch(_) {}
   }
 }
