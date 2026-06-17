@@ -899,11 +899,12 @@ function initSidebarResize() {
     _startY = touch.clientY;
     _startW = sidebar.offsetWidth;
     _startH = sidebar.offsetHeight;
-    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mousemove", onMove, { passive: false });
     document.addEventListener("mouseup", onEnd);
     document.addEventListener("touchmove", onMove, { passive: false });
     document.addEventListener("touchend", onEnd);
     e.preventDefault();
+    e.stopPropagation();
   }
 
   function onMove(e) {
@@ -912,17 +913,18 @@ function initSidebarResize() {
     const touch = e.touches ? e.touches[0] : e;
 
     if (isHorizontal()) {
-      // السحب أفقي: الشات على اليمين، الـ resizer على يساره
-      // سحب لليمين (clientX ↑) = تصغير الشات، لليسار (clientX ↓) = تكبيره
+      // desktop/landscape: سحب أفقي لتغيير عرض الشات
       const delta = _startX - touch.clientX;
-      const newW = Math.min(Math.max(_startW + delta, 180), Math.round(window.innerWidth * 0.65));
+      const newW = Math.min(Math.max(_startW + delta, 150), Math.round(window.innerWidth * 0.65));
       sidebar.style.width = newW + "px";
+      sidebar.style.flex = "none";
     } else {
-      // السحب عمودي في portrait: الـ resizer فوق الشات
-      // سحب لفوق (clientY ↓) = تكبير الشات، لتحت (clientY ↑) = تصغيره
+      // portrait: سحب عمودي لتغيير ارتفاع الشات
+      // لفوق = تكبير (clientY بيقل)، لتحت = تصغير (clientY بيكبر)
       const delta = _startY - touch.clientY;
-      const newH = Math.min(Math.max(_startH + delta, 100), Math.round(window.innerHeight * 0.8));
+      const newH = Math.min(Math.max(_startH + delta, 80), Math.round(window.innerHeight * 0.82));
       sidebar.style.height = newH + "px";
+      sidebar.style.flex = "none"; // منع flex: 1 من override الـ height
     }
   }
 
