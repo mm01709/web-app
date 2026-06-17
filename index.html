@@ -3,49 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>WatchParty — شاهد مع أصدقائك</title>
+  <title>WatchParty</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<!-- ───────────── شاشة الدخول ───────────── -->
+<!-- ───────── شاشة الدخول ───────── -->
 <div id="screen-join" class="screen active">
-  <div class="join-card">
-    <div class="join-logo">🎬</div>
-    <h1>WatchParty</h1>
-    <p class="join-sub">شاهد الأفلام مع أصدقائك بمزامنة تامة</p>
+  <div class="bg-glow bg-glow-tr"></div>
+  <div class="bg-glow bg-glow-bl"></div>
 
-    <label class="field-label">اسمك</label>
-    <input type="text" id="inp-username" placeholder="مثال: أحمد" maxlength="20" />
+  <div class="join-wrap">
+    <!-- اللوجو -->
+    <div class="logo-circle">🎬</div>
+    <h1 class="app-name">WatchParty</h1>
+    <p class="app-sub">شاهد مع أصدقائك في نفس اللحظة</p>
 
-    <div class="join-tabs">
-      <button class="tab-btn active" data-tab="create">إنشاء غرفة</button>
-      <button class="tab-btn" data-tab="join">انضمام لغرفة</button>
+    <!-- حقل الاسم -->
+    <div class="field-wrap">
+      <span class="field-icon">👤</span>
+      <input type="text" id="inp-username" placeholder="اسمك" maxlength="20" autocomplete="off" />
     </div>
 
-    <!-- إنشاء -->
+    <!-- التبويبات -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="create">إنشاء غرفة</button>
+      <button class="tab-btn" data-tab="join">انضمام</button>
+    </div>
+
+    <!-- إنشاء غرفة -->
     <div class="tab-panel active" id="panel-create">
-      <label class="field-label">رابط الفيديو</label>
-      <input type="text" id="inp-video-url" placeholder="رابط MP4 / m3u8 / YouTube" />
-      <p class="hint">يدعم: روابط فيديو مباشرة (.mp4 / .m3u8) أو روابط YouTube</p>
-      <div class="room-code-box">
-        كود الغرفة: <span id="gen-room-code">------</span>
+      <div class="field-wrap">
+        <span class="field-icon">🔗</span>
+        <input type="text" id="inp-video-url" placeholder="رابط فيديو (MP4 / YouTube) — اختياري" />
       </div>
-      <button class="btn btn-primary" id="btn-create">🎉 أنشئ الغرفة</button>
+      <div class="room-code-preview">
+        <span class="room-code-lbl">كود الغرفة</span>
+        <span id="gen-room-code" class="room-code-val">------</span>
+      </div>
+      <button class="btn-primary" id="btn-create">
+        <span class="btn-icon">🎉</span> ابدأ الغرفة
+      </button>
     </div>
 
     <!-- انضمام -->
     <div class="tab-panel" id="panel-join">
-      <label class="field-label">كود الغرفة</label>
-      <input type="text" id="inp-join-code" placeholder="مثال: AB1234" maxlength="6" class="code-input" />
-      <button class="btn btn-secondary" id="btn-join">🔗 انضم</button>
+      <input type="text" id="inp-join-code" placeholder="أدخل كود الغرفة" maxlength="8" class="code-input" autocomplete="off" />
+      <button class="btn-primary" id="btn-join">
+        <span class="btn-icon">🔗</span> انضم الآن
+      </button>
     </div>
 
     <div id="join-error" class="join-error"></div>
   </div>
 </div>
 
-<!-- ───────────── شاشة المشاهدة ───────────── -->
+<!-- ───────── شاشة المشاهدة ───────── -->
 <div id="screen-watch" class="screen">
   <div class="watch-layout">
 
@@ -55,9 +68,10 @@
         <video id="html5-video" playsinline></video>
         <div id="yt-player"></div>
       </div>
-      <!-- تحكم الجودة (يظهر فقط مع يوتيوب) -->
+
+      <!-- شريط الجودة -->
       <div id="quality-bar" style="display:none">
-        <span class="q-label">جودة:</span>
+        <span class="q-label">جودة</span>
         <select id="quality-select">
           <option value="auto">تلقائي</option>
           <option value="hd2160">4K</option>
@@ -70,38 +84,44 @@
           <option value="tiny">144p</option>
         </select>
       </div>
-      <!-- شريط التحكم العائم (landscape / fullscreen) -->
+
+      <!-- Float bar (landscape / fullscreen) -->
       <div id="float-bar">
-        <button id="fb-rotate" title="تدوير الشاشة">⟳</button>
+        <button id="fb-rotate" title="تدوير">⟳</button>
         <button id="fb-chat" title="الشات">💬</button>
-        <button id="fb-mute" title="كتم الميكروفون" style="display:none">🎤</button>
+        <button id="fb-mute" title="كتم" style="display:none">🎤</button>
         <button id="fb-fullscreen" title="ملء الشاشة">⛶</button>
       </div>
     </div>
 
     <!-- الشريط الجانبي -->
     <aside id="sidebar">
+      <!-- Header -->
       <div class="sb-header">
         <span class="sb-logo">🎬</span>
         <span class="sb-title">WatchParty</span>
         <span class="sb-room" id="sb-room-code" title="اضغط للنسخ">------</span>
-        <button class="sb-icon" id="sb-share" title="نسخ الكود">🔗</button>
-        <button class="sb-icon" id="sb-leave" title="مغادرة">🚪</button>
+        <button class="sb-icon-btn" id="sb-share" title="نسخ الكود">🔗</button>
+        <button class="sb-icon-btn" id="sb-leave" title="مغادرة">🚪</button>
       </div>
 
+      <!-- الأعضاء -->
       <div class="sb-members" id="sb-members"></div>
 
-      <!-- شريط الصوت -->
+      <!-- الصوت -->
       <div class="voice-bar" id="voice-bar">
         <div class="voice-avatars" id="voice-avatars"></div>
-        <button class="voice-btn" id="btn-voice" title="دخول الصوت">🎙 صوت</button>
-        <button class="voice-mute-btn" id="btn-mute" title="كتم" style="display:none">🔇</button>
+        <button class="voice-btn" id="btn-voice">🎙 صوت</button>
+        <button class="voice-mute-btn" id="btn-mute" style="display:none">🎤</button>
       </div>
 
+      <!-- الفيد -->
       <div class="sb-feed" id="sb-feed"></div>
 
+      <!-- إيموجي سريع -->
       <div class="sb-emoji-bar" id="sb-emoji-bar"></div>
 
+      <!-- الإدخال -->
       <div class="sb-input-row">
         <input type="text" id="sb-chat-input" placeholder="اكتب رسالة..." maxlength="300" />
         <button class="sb-send" id="sb-send">➤</button>
@@ -111,11 +131,11 @@
   </div>
 </div>
 
-<!-- إشعار عائم -->
+<!-- Toast -->
 <div id="toast"></div>
 
-<!-- عناصر الصوت للـ WebRTC (مخفية) -->
-<div id="remote-audios"></div>
+<!-- صوت WebRTC -->
+<div id="remote-audios" style="display:none"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
 <script src="app.js"></script>
