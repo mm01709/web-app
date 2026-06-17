@@ -137,8 +137,21 @@
         <span class="sb-logo">🎬</span>
         <span class="sb-title">WatchParty</span>
         <span class="sb-room" id="sb-room-code" title="اضغط للنسخ">------</span>
+        <button class="sb-icon-btn" id="sb-media" title="مكتبة الفيديوهات">📂</button>
         <button class="sb-icon-btn" id="sb-share" title="نسخ الكود">🔗</button>
         <button class="sb-icon-btn" id="sb-leave" title="مغادرة">🚪</button>
+      </div>
+
+      <!-- مكتبة الفيديوهات (تظهر عند الضغط على 📂) -->
+      <div id="media-panel" style="display:none">
+        <div class="media-panel-header">
+          <span>📂 مكتبة الفيديوهات</span>
+          <button id="media-refresh" title="تحديث">↻</button>
+          <button id="media-close" title="إغلاق">✕</button>
+        </div>
+        <div id="media-list" class="media-list">
+          <div class="media-loading">جاري التحميل...</div>
+        </div>
       </div>
 
       <!-- الأعضاء -->

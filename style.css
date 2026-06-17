@@ -593,6 +593,96 @@ input::placeholder { color: var(--white24); }
 .sb-send:hover { opacity: 0.85; }
 
 /* ══════════════════════════════════════
+   Media Panel (R2 browser inside room)
+══════════════════════════════════════ */
+#media-panel {
+  background: var(--panel2);
+  border-bottom: 1px solid rgba(232,160,32,0.12);
+  flex-shrink: 0;
+  max-height: 55%;
+  display: flex;
+  flex-direction: column;
+}
+.media-panel-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--white60);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+.media-panel-header span { flex: 1; }
+.media-panel-header button {
+  background: var(--white08);
+  border: none;
+  color: #fff;
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+}
+.media-panel-header button:hover { background: var(--white12); }
+
+.media-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.media-list::-webkit-scrollbar { width: 3px; }
+.media-list::-webkit-scrollbar-thumb { background: rgba(232,160,32,0.3); border-radius: 3px; }
+
+.media-loading, .media-empty {
+  font-size: 12px;
+  color: var(--white38);
+  text-align: center;
+  padding: 20px 0;
+}
+.media-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: var(--white08);
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.media-item:hover { background: rgba(232,160,32,0.10); border-color: rgba(232,160,32,0.25); }
+.media-item.playing { background: rgba(232,160,32,0.14); border-color: rgba(232,160,32,0.40); }
+.media-item-icon { font-size: 20px; flex-shrink: 0; }
+.media-item-info { flex: 1; min-width: 0; }
+.media-item-name {
+  font-size: 12px;
+  color: #ffffffdd;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.media-item.playing .media-item-name { color: var(--gold); }
+.media-item-size { font-size: 10px; color: var(--white38); margin-top: 2px; }
+.media-item-play {
+  background: rgba(232,160,32,0.15);
+  border: 1px solid rgba(232,160,32,0.30);
+  color: var(--gold);
+  border-radius: 7px;
+  width: 28px; height: 28px;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.media-item-play:hover { background: rgba(232,160,32,0.30); }
+
+/* ══════════════════════════════════════
    Upload UI
 ══════════════════════════════════════ */
 .copy-code-btn {

@@ -635,6 +635,11 @@ function buildSidebar() {
   $("sb-share").onclick = copy;
   $("sb-leave").onclick = () => { leaveVoice(); location.reload(); };
 
+  // زر مكتبة الفيديوهات
+  $("sb-media").onclick = toggleMediaPanel;
+  $("media-close").onclick = () => { $("media-panel").style.display = "none"; };
+  $("media-refresh").onclick = loadMediaList;
+
   initVoiceBar();
   renderVoiceAvatars();
 
@@ -1111,6 +1116,83 @@ function applyVideoOnlyMode() {
       if (cmd.action === "seek")  { isSyncing = true; player.seek(cmd.time);                 setTimeout(() => isSyncing = false, 600); }
     } catch(e) {}
   });
+}
+
+// ============================================
+//  R2 Media Browser (داخل الغرفة)
+// ============================================
+let _mediaPanelOpen = false;
+let _currentPlayingKey = null;
+
+function toggleMediaPanel() {
+  _mediaPanelOpen = !_mediaPanelOpen;
+  const panel = $("media-panel");
+  panel.style.display = _mediaPanelOpen ? "flex" : "none";
+  if (_mediaPanelOpen) loadMediaList();
+}
+
+async function loadMediaList() {
+  const list = $("media-list");
+  list.innerHTML = '<div class="media-loading">جاري التحميل...</div>';
+  try {
+    const res = await fetch(`${R2_WORKER}/api/r2/list?prefix=videos`);
+    if (!res.ok) throw new Error("فشل التحميل");
+    const data = await res.json();
+    let items = data.objects || data.items || (Array.isArray(data) ? data : []);
+
+    // فلتر فيديوهات فقط
+    const videoExts = /\.(mp4|mkv|webm|mov|avi|m4v|ts)$/i;
+    items = items.filter(o => videoExts.test(o.key || o.name || ""));
+
+    // ترتيب من الأحدث
+    items.sort((a, b) => new Date(b.uploaded || b.lastModified || 0) - new Date(a.uploaded || a.lastModified || 0));
+
+    if (!items.length) {
+      list.innerHTML = '<div class="media-empty">لا توجد فيديوهات مرفوعة</div>';
+      return;
+    }
+
+    list.innerHTML = "";
+    const R2_PUBLIC = "https://pub-c4aeb02f97054c51be915efafd801dbc.r2.dev";
+    items.forEach(o => {
+      const key = o.key || o.name || "";
+      const name = key.split("/").pop();
+      const url = o.publicUrl || o.url || `${R2_PUBLIC}/${encodeURIComponent(key).replace(/%2F/g, "/")}`;
+      const size = o.size ? formatBytes(o.size) : "";
+      const isPlaying = key === _currentPlayingKey;
+
+      const item = el("div", { class: "media-item" + (isPlaying ? " playing" : "") },
+        el("span", { class: "media-item-icon", text: "🎬" }),
+        el("div", { class: "media-item-info" },
+          el("div", { class: "media-item-name", text: name }),
+          size ? el("div", { class: "media-item-size", text: size }) : null
+        ),
+        el("button", { class: "media-item-play", text: isPlaying ? "▶" : "▶",
+          onclick: (e) => { e.stopPropagation(); playMediaItem(key, url, name); }
+        })
+      );
+      item.onclick = () => playMediaItem(key, url, name);
+      list.appendChild(item);
+    });
+  } catch (err) {
+    list.innerHTML = `<div class="media-empty">❌ ${err.message}</div>`;
+  }
+}
+
+function playMediaItem(key, url, name) {
+  _currentPlayingKey = key;
+  const src = { type: "r2", url, youtubeUrl: null };
+  videoSrc = { type: "html5", url, hls: false };
+  loadPlayer(videoSrc);
+
+  // أبلّغ كل الحضور
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "set_source", roomId, username, source: src }));
+  }
+
+  // أغلق الـ panel وحدّث القائمة
+  loadMediaList();
+  toast("▶ " + name);
 }
 
 // ── بدء ──
