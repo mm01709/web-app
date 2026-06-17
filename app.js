@@ -15,6 +15,7 @@ let videoSrc = null;       // { type: "html5"|"youtube", url, id }
 let player = null;         // واجهة موحّدة للمشغّل الحالي
 let ytReady = false;
 let ytApiLoading = false;
+let _roomStateReceived = false; // منع source من إعادة التحميل بعد room_state
 
 // ── عناصر ──
 const $ = (id) => document.getElementById(id);
@@ -166,6 +167,7 @@ function connect() {
     ws.onopen = () => {
       clearTimeout(timeout);
       socket = ws;
+      _roomStateReceived = false;
       // ابعت الانضمام + مصدر الفيديو (لو منشئ الغرفة)
       ws.send(JSON.stringify({ type: "join", roomId, username }));
       if (videoSrc) {
@@ -196,25 +198,40 @@ function handleMessage(msg) {
     case "members": renderMembers(msg.members); break;
     case "reaction": floatReaction(msg.emoji); break;
     case "room_state": {
-      // لو جينا من URL params ما نسمحش للغرفة تطغى على الفيديو
+      _roomStateReceived = true;
       const _autoUrl = new URLSearchParams(window.location.search).get("url");
       if (_autoUrl) {
-        // auto-join: نحمّل الفيديو من الـ URL params بس
-        if (!player && videoSrc) loadPlayer(videoSrc);
-      } else if (!videoSrc && msg.source) {
+        // auto-join من Flutter: نحمّل من URL params لو لسه ما حملناش
+        if (!player && videoSrc) {
+          loadPlayer(videoSrc);
+        }
+      } else if (msg.source) {
+        // guest عادي: خد الـ source من السيرفر
         videoSrc = msg.source;
-        loadPlayer(videoSrc);
+        if (!player) loadPlayer(videoSrc);
       }
-      if (msg.currentTime != null && player) {
+      if (msg.currentTime != null) {
+        const _syncTime = msg.currentTime;
+        const _syncPlay = msg.isPlaying;
+        // نستنى عشان الـ player يتحمل
         setTimeout(() => {
-          applySync("seek", msg.currentTime);
-          if (msg.isPlaying) setTimeout(() => applySync("play", msg.currentTime), 400);
-        }, 800);
+          if (!player) return;
+          applySync("seek", _syncTime);
+          if (_syncPlay) setTimeout(() => { if (player) applySync("play", _syncTime); }, 500);
+        }, 1200);
       }
       break; }
     case "source":
-      // منشئ الغرفة غيّر/حدّد الفيديو
-      if (msg.source) { videoSrc = msg.source; loadPlayer(videoSrc); }
+      // الهوست غيّر الفيديو — حمّل الجديد
+      // لو room_state وصل بالفعل وحمّل الفيديو، مش محتاجين نعيد التحميل
+      if (msg.source) {
+        videoSrc = msg.source;
+        if (!_roomStateReceived || !player) {
+          loadPlayer(videoSrc);
+        }
+        // reset عشان التغييرات الجاية تتطبق
+        _roomStateReceived = false;
+      }
       break;
     case "voice_state":
       handleVoiceState(msg.voiceUids || []);
@@ -235,8 +252,20 @@ function handleMessage(msg) {
 //  المشغّل الموحّد (HTML5 / YouTube)
 // ============================================
 function loadPlayer(src) {
-  if (src.type === "youtube") loadYouTube(src.id);
-  else loadHtml5(src);
+  // لو فيه youtubeUrl (من Flutter)، استخرج منه الـ id وشغّل YouTube
+  if (src.youtubeUrl) {
+    const parsed = parseVideoUrl(src.youtubeUrl);
+    if (parsed && parsed.type === "youtube") { loadYouTube(parsed.id); return; }
+  }
+  if (src.type === "youtube") {
+    // لو الـ id مش موجود جرّب نستخرجه من الـ url
+    const id = src.id || (src.url ? (parseVideoUrl(src.url) || {}).id : null);
+    if (id) { loadYouTube(id); return; }
+  }
+  // html5 أو r2 عادي
+  const url = src.url || "";
+  if (!url) return;
+  loadHtml5({ url, hls: /\.m3u8(\?|$)/i.test(url) });
 }
 
 // ── HTML5 (MP4 / HLS) ──
