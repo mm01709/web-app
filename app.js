@@ -766,9 +766,11 @@ function toggleSidebarOverlay() {
 }
 
 function toggleFullscreen() {
-  const wrap = document.documentElement;
+  // نعمل fullscreen على video-area كاملاً عشان الـ overlay يكون جواه
+  const target = $("player-wrap") || document.documentElement;
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    (wrap.requestFullscreen || wrap.webkitRequestFullscreen || (() => {})).call(wrap);
+    const req = target.requestFullscreen || target.webkitRequestFullscreen;
+    if (req) req.call(target);
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock("landscape").catch(() => {});
     }
@@ -781,17 +783,30 @@ function toggleFullscreen() {
 }
 
 function _onFullscreenChange() {
-  const sb = $("sidebar");
-  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+  const isFs = !!fsEl;
+
+  // لو المتصفح عمل fullscreen على الـ video مباشرة، نحوله لـ player-wrap
+  const vid = $("html5-video");
+  if (fsEl && fsEl === vid) {
+    (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
+    setTimeout(() => {
+      const pw = $("player-wrap");
+      const req = pw.requestFullscreen || pw.webkitRequestFullscreen;
+      if (req) req.call(pw);
+    }, 50);
+    return;
+  }
+
   document.body.classList.toggle("is-fullscreen", isFs);
+  const ov = $("video-overlay");
 
   if (!isFs) {
-    if (sb) sb.classList.remove("open");
+    if ($("sidebar")) $("sidebar").classList.remove("open");
     try { $("fb-chat").classList.remove("active"); } catch(_) {}
     try { $("fb-fullscreen").textContent = "⛶"; } catch(_) {}
     try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(_) {}
-    // أخفِ الـ overlay
-    try { $("video-overlay").classList.remove("visible"); $("video-overlay").classList.add("hidden"); } catch(_) {}
+    if (ov) { ov.classList.remove("visible"); ov.classList.add("hidden"); }
   } else {
     try { $("fb-fullscreen").textContent = "✕"; } catch(_) {}
     showOverlay();

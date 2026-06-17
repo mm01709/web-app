@@ -103,35 +103,33 @@
       <div id="player-wrap">
         <video id="html5-video" playsinline></video>
         <div id="yt-player"></div>
-      </div>
 
-      <!-- شريط الجودة -->
-      <div id="quality-bar" style="display:none">
-        <span class="q-label">جودة</span>
-        <select id="quality-select">
-          <option value="auto">تلقائي</option>
-          <option value="hd2160">4K</option>
-          <option value="hd1440">1440p</option>
-          <option value="hd1080">1080p</option>
-          <option value="hd720">720p</option>
-          <option value="large">480p</option>
-          <option value="medium">360p</option>
-          <option value="small">240p</option>
-          <option value="tiny">144p</option>
-        </select>
-      </div>
+        <!-- شريط الجودة -->
+        <div id="quality-bar" style="display:none">
+          <span class="q-label">جودة</span>
+          <select id="quality-select">
+            <option value="auto">تلقائي</option>
+            <option value="hd2160">4K</option>
+            <option value="hd1440">1440p</option>
+            <option value="hd1080">1080p</option>
+            <option value="hd720">720p</option>
+            <option value="large">480p</option>
+            <option value="medium">360p</option>
+            <option value="small">240p</option>
+            <option value="tiny">144p</option>
+          </select>
+        </div>
 
-      <!-- Video overlay controls (landscape / fullscreen) -->
-      <div id="video-overlay">
-        <!-- شريط علوي: emoji reactions -->
-        <div id="overlay-emojis"></div>
-        <!-- شريط سفلي: أزرار التحكم -->
-        <div id="overlay-controls">
-          <button id="fb-fullscreen" title="ملء الشاشة / خروج">⛶</button>
-          <button id="fb-rotate" title="تدوير الشاشة">⟳</button>
-          <button id="fb-mute" title="كتم المايك">🎤</button>
-          <button id="fb-voice" title="دخول / خروج الصوت">🎙</button>
-          <button id="fb-chat" title="الشات">💬</button>
+        <!-- Video overlay — داخل player-wrap عشان يظهر في fullscreen -->
+        <div id="video-overlay">
+          <div id="overlay-emojis"></div>
+          <div id="overlay-controls">
+            <button id="fb-fullscreen" title="ملء الشاشة / خروج">⛶</button>
+            <button id="fb-rotate" title="تدوير الشاشة">⟳</button>
+            <button id="fb-mute" title="كتم المايك" style="display:none">🎤</button>
+            <button id="fb-voice" title="دخول / خروج الصوت">🎙</button>
+            <button id="fb-chat" title="الشات">💬</button>
+          </div>
         </div>
       </div>
 
