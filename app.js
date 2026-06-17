@@ -789,7 +789,8 @@ function initVideoOverlay() {
   // FABs
   $("fab-voice").onclick = _doVoiceToggle;
   $("fab-mute").onclick  = _doMute;
-  $("fab-chat").onclick  = () => toggleChat();
+  try { $("fab-chat").onclick = () => toggleChat(); } catch(_) {}
+  $("btn-toggle-chat").onclick = () => toggleChat();
 
   // Room code in overlay top
   try { $("ov-room-code").textContent = roomId || ""; } catch(_) {}
@@ -898,9 +899,9 @@ function toggleChat(forceOpen) {
   if (!sb) return;
   const willOpen = forceOpen !== undefined ? forceOpen : !sb.classList.contains("open");
   sb.classList.toggle("open", willOpen);
-  // sync button states
   try { $("fb-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
   try { $("fab-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
+  try { $("btn-toggle-chat").classList.toggle("chat-open", willOpen); } catch(_) {}
 }
 
 function toggleSidebarOverlay() { toggleChat(); } // backward compat
