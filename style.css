@@ -663,17 +663,17 @@ body.is-fullscreen #video-overlay,
 #fab-mute.muted { background: #e74c3c; }
 /* زرار الشات الثابت دايماً */
 #btn-toggle-chat {
-  position: absolute;
-  bottom: 16px;
+  position: fixed;
+  bottom: 20px;
   right: 16px;
   width: 50px; height: 50px;
   border-radius: 50%;
   border: none;
-  background: rgba(232,160,32,0.85);
+  background: rgba(232,160,32,0.9);
   color: #fff;
   font-size: 22px;
   cursor: pointer;
-  z-index: 60;
+  z-index: 500;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 3px 14px rgba(0,0,0,0.5);
   transition: transform 0.15s, background 0.2s;
@@ -682,6 +682,10 @@ body.is-fullscreen #video-overlay,
 #btn-toggle-chat.chat-open {
   background: var(--gold);
   box-shadow: 0 0 0 3px rgba(232,160,32,0.4), 0 3px 14px rgba(0,0,0,0.5);
+}
+/* في desktop الشات دايماً مفتوح — نخبي الزرار */
+@media (min-width: 769px) {
+  #btn-toggle-chat { display: none; }
 }
 
 /* ══════════════════════════════════════
