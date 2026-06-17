@@ -653,57 +653,109 @@ function buildSidebar() {
   input.addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
   $("sb-send").onclick = sendChat;
 
-  // زر الشات على الموبايل (portrait)
+  initVideoOverlay();
 
-  // ── Float Bar ──────────────────────────────
-  // زر تدوير الشاشة
-  $("fb-rotate").onclick = () => {
-    if (!screen.orientation || !screen.orientation.lock) {
-      toast("⚠️ التدوير غير مدعوم في هذا المتصفح");
-      return;
-    }
-    const cur = screen.orientation.type || "";
-    const target = cur.includes("landscape") ? "portrait" : "landscape";
-    screen.orientation.lock(target).catch(() => {
-      toast("⚠️ اقلب جهازك يدوياً");
-    });
-  };
-
-  // زر الشات في الـ float bar
-  $("fb-chat").onclick = () => toggleSidebarOverlay();
-
-  // إغلاق الـ sidebar لما تضغط برا
+  // إغلاق الـ sidebar لما تضغط برا في portrait
   document.addEventListener("click", (e) => {
     const sb = $("sidebar");
     if (sb.classList.contains("open") && !sb.contains(e.target) && e.target !== $("fb-chat")) {
+      const isLandOrFs = window.matchMedia("(orientation: landscape)").matches
+        || !!(document.fullscreenElement || document.webkitFullscreenElement)
+        || document.body.classList.contains("is-fullscreen");
+      if (isLandOrFs) return; // في landscape/fullscreen الـ sidebar جنب الفيديو مش overlay
       sb.classList.remove("open");
+      try { $("fb-chat").classList.remove("active"); } catch(_) {}
     }
   });
 
-  // زر كتم المايك في الـ float bar
-  $("fb-mute").onclick = () => {
-    micMuted = !micMuted;
-    if (localStream) {
-      localStream.getAudioTracks().forEach(t => { t.enabled = !micMuted; });
-    }
-    const btn = $("fb-mute");
-    btn.textContent = micMuted ? "🔇" : "🎤";
-    btn.classList.toggle("muted", micMuted);
-    // مزامن مع الزر الجانبي
-    const btnMute = $("btn-mute");
-    btnMute.textContent = micMuted ? "🔇 أنت مكتوم" : "🎤";
-    btnMute.classList.toggle("muted", micMuted);
-    toast(micMuted ? "تم كتم الميكروفون 🔇" : "الميكروفون مفعّل 🎤");
-  };
-
-  // زر fullscreen
-  $("fb-fullscreen").onclick = toggleFullscreen;
-
-  // لما يدخل/يخرج fullscreen
+  // fullscreen events
   document.addEventListener("fullscreenchange", _onFullscreenChange);
   document.addEventListener("webkitfullscreenchange", _onFullscreenChange);
 
   addEvent(null, "welcome");
+}
+
+// ── Video Overlay (يظهر في landscape + fullscreen) ──────────────
+let _overlayTimer = null;
+
+function initVideoOverlay() {
+  const overlay = $("video-overlay");
+
+  // ملء emoji bar
+  const emoBar = $("overlay-emojis");
+  EMOJI_QUICK.forEach(em => {
+    const btn = el("span", { class: "ov-emo", text: em });
+    btn.onclick = () => { sendReaction(em); showOverlay(); };
+    emoBar.appendChild(btn);
+  });
+
+  // أزرار التحكم
+  $("fb-fullscreen").onclick = toggleFullscreen;
+
+  $("fb-rotate").onclick = () => {
+    if (!screen.orientation || !screen.orientation.lock) {
+      toast("⚠️ التدوير غير مدعوم");
+      return;
+    }
+    const cur = screen.orientation.type || "";
+    const target = cur.includes("landscape") ? "portrait" : "landscape";
+    screen.orientation.lock(target).catch(() => toast("⚠️ اقلب جهازك يدوياً"));
+    showOverlay();
+  };
+
+  $("fb-mute").onclick = () => {
+    micMuted = !micMuted;
+    if (localStream) localStream.getAudioTracks().forEach(t => { t.enabled = !micMuted; });
+    const btn = $("fb-mute");
+    btn.textContent = micMuted ? "🔇" : "🎤";
+    btn.classList.toggle("muted", micMuted);
+    $("btn-mute").textContent = micMuted ? "🔇 أنت مكتوم" : "🎤";
+    $("btn-mute").classList.toggle("muted", micMuted);
+    toast(micMuted ? "تم كتم الميكروفون 🔇" : "الميكروفون مفعّل 🎤");
+    showOverlay();
+  };
+
+  $("fb-voice").onclick = () => {
+    const inVoice = $("fb-voice").classList.contains("in-voice");
+    if (inVoice) {
+      leaveVoice();
+      $("fb-voice").classList.remove("in-voice");
+      $("fb-voice").textContent = "🎙";
+      $("fb-mute").style.display = "none";
+      toast("خرجت من الصوت");
+    } else {
+      joinVoice().then(() => {
+        $("fb-voice").classList.add("in-voice");
+        $("fb-voice").textContent = "🔴";
+        $("fb-mute").style.display = "";
+        toast("دخلت الصوت 🎙");
+      }).catch(err => toast("❌ " + (err.message || "فشل الصوت")));
+    }
+    showOverlay();
+  };
+
+  $("fb-chat").onclick = () => {
+    toggleSidebarOverlay();
+    showOverlay();
+  };
+
+  // إظهار الـ overlay عند تحريك الماوس أو اللمس
+  const va = document.querySelector(".video-area");
+  va.addEventListener("mousemove", showOverlay);
+  va.addEventListener("touchstart", showOverlay, { passive: true });
+  overlay.addEventListener("mousemove", showOverlay);
+  overlay.addEventListener("touchstart", showOverlay, { passive: true });
+}
+
+function showOverlay() {
+  const ov = $("video-overlay");
+  ov.classList.remove("hidden");
+  ov.classList.add("visible");
+  clearTimeout(_overlayTimer);
+  _overlayTimer = setTimeout(() => {
+    ov.classList.remove("visible");
+    ov.classList.add("hidden");
+  }, 3500);
 }
 
 function toggleSidebarOverlay() {
@@ -731,18 +783,18 @@ function toggleFullscreen() {
 function _onFullscreenChange() {
   const sb = $("sidebar");
   const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-
-  // class على body يتحكم في الـ layout
   document.body.classList.toggle("is-fullscreen", isFs);
-  $("float-bar").style.display = isFs ? "flex" : "";
 
   if (!isFs) {
     if (sb) sb.classList.remove("open");
     try { $("fb-chat").classList.remove("active"); } catch(_) {}
     try { $("fb-fullscreen").textContent = "⛶"; } catch(_) {}
     try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(_) {}
+    // أخفِ الـ overlay
+    try { $("video-overlay").classList.remove("visible"); $("video-overlay").classList.add("hidden"); } catch(_) {}
   } else {
     try { $("fb-fullscreen").textContent = "✕"; } catch(_) {}
+    showOverlay();
   }
 }
 
@@ -897,9 +949,10 @@ async function joinVoice() {
   $("btn-mute").style.display = "";
   $("btn-mute").textContent = "🎤";
   $("btn-mute").classList.remove("muted");
-  // أظهر زر الكتم في الـ float bar
   $("fb-mute").style.display = "";
   $("fb-mute").textContent = "🎤";
+  $("fb-mute").classList.remove("muted");
+  try { $("fb-voice").classList.add("in-voice"); $("fb-voice").textContent = "🔴"; } catch(_) {}
   $("fb-mute").classList.remove("muted");
 
   send({ type: "voice_join", roomId, username });
@@ -921,6 +974,7 @@ function leaveVoice() {
   $("btn-voice").classList.remove("active");
   $("btn-mute").style.display = "none";
   $("fb-mute").style.display = "none";
+  try { $("fb-voice").classList.remove("in-voice"); $("fb-voice").textContent = "🎙"; } catch(_) {}
 
   // امسح الـ audio elements
   $("remote-audios").innerHTML = "";

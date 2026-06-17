@@ -300,36 +300,94 @@ input::placeholder { color: var(--white24); }
 }
 #quality-select option { background: #1a1408; }
 
-/* ── Float Bar ── */
-#float-bar {
+/* ── Video Overlay Controls ── */
+#video-overlay {
   display: none;
   position: absolute;
-  top: 10px; left: 10px;
+  inset: 0;
   z-index: 30;
-  gap: 6px;
-  flex-direction: row;
-  align-items: center;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+  /* fade in/out */
+  opacity: 1;
+  transition: opacity 0.35s ease;
 }
-#float-bar button {
-  background: rgba(0,0,0,0.72);
-  border: 1px solid rgba(232,160,32,0.25);
-  color: #fff;
-  width: 40px; height: 40px;
-  border-radius: 10px;
-  font-size: 17px;
-  cursor: pointer;
-  backdrop-filter: blur(6px);
-  transition: background 0.15s;
-}
-#float-bar button:hover,
-#float-bar button:active { background: rgba(232,160,32,0.30); }
-#float-bar #fb-mute.muted { background: rgba(231,76,60,0.55); }
+#video-overlay.hidden { opacity: 0; pointer-events: none; }
+#video-overlay.visible { opacity: 1; pointer-events: auto; }
 
-@media (max-width: 1024px) and (orientation: landscape) {
-  #float-bar { display: flex; }
+/* شريط الـ emoji فوق */
+#overlay-emojis {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  pointer-events: auto;
+  flex-wrap: wrap;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%);
 }
-:fullscreen #float-bar,
-:-webkit-full-screen #float-bar { display: flex; }
+#overlay-emojis .ov-emo {
+  font-size: 24px;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 4px 6px;
+  transition: transform 0.15s, background 0.15s;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(4px);
+}
+#overlay-emojis .ov-emo:hover,
+#overlay-emojis .ov-emo:active {
+  transform: scale(1.25);
+  background: rgba(232,160,32,0.25);
+}
+
+/* شريط التحكم تحت */
+#overlay-controls {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px;
+  align-items: center;
+  justify-content: flex-start;
+  pointer-events: auto;
+  background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%);
+}
+#overlay-controls button {
+  background: rgba(0,0,0,0.60);
+  border: 1px solid rgba(232,160,32,0.30);
+  color: #fff;
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  font-size: 18px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+#overlay-controls button:hover,
+#overlay-controls button:active {
+  background: rgba(232,160,32,0.30);
+  transform: scale(1.05);
+}
+#overlay-controls #fb-mute.muted { background: rgba(231,76,60,0.55); }
+#overlay-controls #fb-voice.in-voice {
+  background: rgba(232,160,32,0.20);
+  border-color: rgba(232,160,32,0.60);
+}
+#overlay-controls #fb-chat.active {
+  background: rgba(232,160,32,0.25);
+  border-color: rgba(232,160,32,0.60);
+}
+
+/* يظهر في landscape موبايل + fullscreen */
+@media (max-width: 1024px) and (orientation: landscape) {
+  #video-overlay { display: flex; }
+}
+:fullscreen #video-overlay,
+:-webkit-full-screen #video-overlay,
+body.is-fullscreen #video-overlay { display: flex !important; }
+
+/* float-bar القديم — مخفي دايماً */
+#float-bar { display: none !important; }
 
 /* ══════════════════════════════════════
    الشريط الجانبي

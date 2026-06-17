@@ -121,13 +121,22 @@
         </select>
       </div>
 
-      <!-- Float bar (landscape / fullscreen) -->
-      <div id="float-bar">
-        <button id="fb-rotate" title="تدوير">⟳</button>
-        <button id="fb-chat" title="الشات">💬</button>
-        <button id="fb-mute" title="كتم" style="display:none">🎤</button>
-        <button id="fb-fullscreen" title="ملء الشاشة">⛶</button>
+      <!-- Video overlay controls (landscape / fullscreen) -->
+      <div id="video-overlay">
+        <!-- شريط علوي: emoji reactions -->
+        <div id="overlay-emojis"></div>
+        <!-- شريط سفلي: أزرار التحكم -->
+        <div id="overlay-controls">
+          <button id="fb-fullscreen" title="ملء الشاشة / خروج">⛶</button>
+          <button id="fb-rotate" title="تدوير الشاشة">⟳</button>
+          <button id="fb-mute" title="كتم المايك">🎤</button>
+          <button id="fb-voice" title="دخول / خروج الصوت">🎙</button>
+          <button id="fb-chat" title="الشات">💬</button>
+        </div>
       </div>
+
+      <!-- float-bar قديم (نحتفظ بالـ ID للـ JS) -->
+      <div id="float-bar" style="display:none"></div>
     </div>
 
     <!-- الشريط الجانبي -->
