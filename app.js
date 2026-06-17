@@ -663,22 +663,25 @@ function tryAutoJoin() {
   username = user;
   localStorage.setItem("wp-username", user);
 
-  // اخفي شاشة الدخول فوراً واعرض شاشة المشاهدة مع loading
-  showScreen("watch");
-  buildSidebar();
+  // اخفي شاشة الدخول فوراً — قبل أي حاجة تانية
+  document.getElementById("screen-join").classList.remove("active");
+  document.getElementById("screen-watch").classList.add("active");
+  try { buildSidebar(); } catch(e) {}
 
   // placeholder حتى يتحمل الفيديو
   const wrap = $("player-wrap");
-  if (wrap && !videoSrc) {
-    wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ffffff60;font-size:14px">⏳ جاري الاتصال...</div>';
+  if (wrap) {
+    wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#ffffff60;font-size:14px">⏳ جاري الاتصال بالسيرفر...</div>';
   }
 
   connect()
     .then(() => {
+      if (videoSrc && wrap) wrap.innerHTML = '';
       if (videoSrc) loadPlayer(videoSrc);
     })
     .catch(() => {
-      showScreen("join");
+      document.getElementById("screen-watch").classList.remove("active");
+      document.getElementById("screen-join").classList.add("active");
     });
 
   return true;
