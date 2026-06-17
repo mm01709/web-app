@@ -324,12 +324,19 @@ input::placeholder { color: var(--white24); }
   flex-direction: column;
   justify-content: space-between;
   pointer-events: none;
-  /* fade in/out */
   opacity: 1;
   transition: opacity 0.35s ease;
 }
 #video-overlay.hidden { opacity: 0; pointer-events: none; }
 #video-overlay.visible { opacity: 1; pointer-events: auto; }
+
+/* في fullscreen — fixed عشان يغطي الشاشة كلها */
+body.is-fullscreen #video-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
 
 /* شريط الـ emoji فوق */
 #overlay-emojis {

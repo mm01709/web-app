@@ -766,50 +766,35 @@ function toggleSidebarOverlay() {
 }
 
 function toggleFullscreen() {
-  // نعمل fullscreen على video-area كاملاً عشان الـ overlay يكون جواه
-  const target = $("player-wrap") || document.documentElement;
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    const req = target.requestFullscreen || target.webkitRequestFullscreen;
-    if (req) req.call(target);
+    const el = document.documentElement;
+    (el.requestFullscreen || el.webkitRequestFullscreen || (() => toast("⚠️ المتصفح لا يدعم الشاشة الكاملة"))).call(el);
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock("landscape").catch(() => {});
     }
   } else {
     (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
-    if (screen.orientation && screen.orientation.unlock) {
-      screen.orientation.unlock();
-    }
+    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
   }
 }
 
 function _onFullscreenChange() {
-  const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
-  const isFs = !!fsEl;
-
-  // لو المتصفح عمل fullscreen على الـ video مباشرة، نحوله لـ player-wrap
-  const vid = $("html5-video");
-  if (fsEl && fsEl === vid) {
-    (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
-    setTimeout(() => {
-      const pw = $("player-wrap");
-      const req = pw.requestFullscreen || pw.webkitRequestFullscreen;
-      if (req) req.call(pw);
-    }, 50);
-    return;
-  }
-
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
   document.body.classList.toggle("is-fullscreen", isFs);
   const ov = $("video-overlay");
 
-  if (!isFs) {
-    if ($("sidebar")) $("sidebar").classList.remove("open");
-    try { $("fb-chat").classList.remove("active"); } catch(_) {}
+  if (isFs) {
+    try { $("fb-fullscreen").textContent = "✕"; } catch(_) {}
+    // أظهر الـ overlay فوراً بـ fixed position
+    if (ov) { ov.style.display = "flex"; }
+    showOverlay();
+  } else {
     try { $("fb-fullscreen").textContent = "⛶"; } catch(_) {}
     try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(_) {}
-    if (ov) { ov.classList.remove("visible"); ov.classList.add("hidden"); }
-  } else {
-    try { $("fb-fullscreen").textContent = "✕"; } catch(_) {}
-    showOverlay();
+    if ($("sidebar")) $("sidebar").classList.remove("open");
+    try { $("fb-chat").classList.remove("active"); } catch(_) {}
+    // أعد الـ overlay لحالته الطبيعي (CSS يتحكم في display)
+    if (ov) { ov.style.display = ""; ov.classList.remove("visible","hidden"); }
   }
 }
 
