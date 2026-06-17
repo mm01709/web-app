@@ -675,7 +675,12 @@ function tryAutoJoin() {
 
   connect()
     .then(() => {
-      if (wrap) wrap.innerHTML = '';
+      if (wrap) {
+        // نرجع العناصر الأصلية لو اتمسحت
+        if (!$("yt-player")) {
+          wrap.innerHTML = '<video id="html5-video" playsinline style="width:100%;height:100%;background:#000;display:none"></video><div id="yt-player" style="width:100%;height:100%;display:none"></div>';
+        }
+      }
       if (videoSrc) loadPlayer(videoSrc);
     })
     .catch((e) => {
