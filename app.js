@@ -707,21 +707,21 @@ function buildSidebar() {
 }
 
 function toggleSidebarOverlay() {
-  $("sidebar").classList.toggle("open");
+  const sb = $("sidebar");
+  const btn = $("fb-chat");
+  sb.classList.toggle("open");
+  btn.classList.toggle("active", sb.classList.contains("open"));
 }
 
 function toggleFullscreen() {
-  const el = document.documentElement;
+  const wrap = document.documentElement;
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    (el.requestFullscreen || el.webkitRequestFullscreen || (() => {})).call(el);
-    $("fb-fullscreen").textContent = "✕";
-    // تدوير landscape تلقائياً عند fullscreen
+    (wrap.requestFullscreen || wrap.webkitRequestFullscreen || (() => {})).call(wrap);
     if (screen.orientation && screen.orientation.lock) {
       screen.orientation.lock("landscape").catch(() => {});
     }
   } else {
     (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
-    $("fb-fullscreen").textContent = "⛶";
     if (screen.orientation && screen.orientation.unlock) {
       screen.orientation.unlock();
     }
@@ -733,9 +733,14 @@ function _onFullscreenChange() {
   if (!sb) return;
   const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
   if (!isFs) {
+    // خروج fullscreen — أغلق الشات وأرجع الأيقونة
     sb.classList.remove("open");
+    try { $("fb-chat").classList.remove("active"); } catch(_) {}
     try { $("fb-fullscreen").textContent = "⛶"; } catch(_) {}
     try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(_) {}
+  } else {
+    // دخل fullscreen — حدّث أيقونة الخروج
+    try { $("fb-fullscreen").textContent = "✕"; } catch(_) {}
   }
 }
 

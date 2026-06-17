@@ -851,43 +851,96 @@ body.videoonly .video-area   { height: 100%; width: 100%; }
    موبايل landscape
 ══════════════════════════════════════ */
 @media (max-width: 1024px) and (orientation: landscape) {
-  .watch-layout { flex-direction: row; }
-  .video-area { flex: 1; height: 100%; }
-
-  /* sidebar كـ overlay يظهر بزر float-bar */
-  #sidebar {
-    position: fixed;
-    top: 0; right: 0;
-    width: 280px;
-    height: 100%;
-    z-index: 9999;
-    background: rgba(14,14,18,0.96);
-    backdrop-filter: blur(10px);
-    border-right: none;
-    border-left: 1px solid rgba(232,160,32,0.15);
-    transform: translateX(100%);
-    transition: transform 0.25s ease;
-    flex-shrink: 0;
+  .watch-layout {
+    flex-direction: row;
+    overflow: hidden;
   }
-  #sidebar.open { transform: translateX(0); }
+
+  /* الفيديو يأخذ كل العرض لما الشات مخفي */
+  .video-area {
+    flex: 1;
+    height: 100%;
+    transition: flex 0.25s ease;
+    min-width: 0;
+  }
+
+  /* الـ sidebar جنب الفيديو — مش overlay */
+  #sidebar {
+    width: 0;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: width 0.25s ease;
+    border-right: none;
+    border-left: none;
+    height: 100%;
+    position: relative;
+    transform: none !important;
+  }
+  #sidebar.open {
+    width: 260px;
+    border-left: 1px solid rgba(232,160,32,0.15);
+  }
+
+  /* زر 💬 يظهر دايماً في landscape */
+  #float-bar { display: flex; }
+
+  /* إخفاء زر الشات في float bar لما الشات مفتوح */
+  #sidebar.open ~ .video-area #fb-chat,
+  .video-area:has(~ #sidebar.open) #fb-chat { opacity: 0.5; }
 }
 
 /* ══════════════════════════════════════
-   Fullscreen
+   Fullscreen (desktop + mobile)
 ══════════════════════════════════════ */
+
+/* الـ layout يبقى flex row في fullscreen */
+:fullscreen .watch-layout,
+:-webkit-full-screen .watch-layout {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+}
+
+:fullscreen .video-area,
+:-webkit-full-screen .video-area {
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  transition: flex 0.25s ease;
+}
+
+/* الـ sidebar جنب الفيديو — مش overlay */
 :fullscreen #sidebar,
 :-webkit-full-screen #sidebar {
-  position: fixed;
-  top: 0; right: 0;
-  width: 280px;
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  transform: none !important;
+  width: 0;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.25s ease;
   height: 100%;
-  z-index: 9999;
-  background: rgba(14,14,18,0.96);
-  backdrop-filter: blur(10px);
-  transform: translateX(100%);
-  transition: transform 0.25s ease;
+  background: var(--panel2);
+  border-left: none;
 }
+
 :fullscreen #sidebar.open,
 :-webkit-full-screen #sidebar.open {
-  transform: translateX(0);
+  width: 280px;
+  border-left: 1px solid rgba(232,160,32,0.15);
+}
+
+/* float bar دايماً ظاهر في fullscreen */
+:fullscreen #float-bar,
+:-webkit-full-screen #float-bar {
+  display: flex;
+}
+
+/* زر 💬 يتغير لما الشات مفتوح */
+:fullscreen #fb-chat.active,
+:-webkit-full-screen #fb-chat.active {
+  background: rgba(232,160,32,0.25);
+  border-color: rgba(232,160,32,0.5);
 }
