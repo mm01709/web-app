@@ -1393,10 +1393,19 @@ function createPeer(uid, isInitiator) {
   return pc;
 }
 
+function _toSdpInit(raw) {
+  if (!raw) return null;
+  if (typeof raw === "string") return { type: "offer", sdp: raw };
+  if (raw.sdp) return { type: raw.type || "offer", sdp: raw.sdp };
+  return null;
+}
+
 async function handleVoiceOffer(msg) {
   if (!inVoice || !localStream) return;
+  const sdpInit = _toSdpInit(msg.sdp);
+  if (!sdpInit) { console.error("[Voice] handleVoiceOffer: invalid sdp", msg.sdp); return; }
   const pc = createPeer(msg.from, false);
-  await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+  await pc.setRemoteDescription(new RTCSessionDescription(sdpInit));
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
   send({ type: "voice_answer", roomId, username, to: msg.from, sdp: pc.localDescription });
@@ -1405,7 +1414,9 @@ async function handleVoiceOffer(msg) {
 async function handleVoiceAnswer(msg) {
   const pc = peerConnections[msg.from];
   if (!pc) return;
-  await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+  const sdpInit = _toSdpInit(msg.sdp);
+  if (!sdpInit) { console.error("[Voice] handleVoiceAnswer: invalid sdp", msg.sdp); return; }
+  await pc.setRemoteDescription(new RTCSessionDescription({ ...sdpInit, type: "answer" }));
 }
 
 async function handleVoiceIce(msg) {
