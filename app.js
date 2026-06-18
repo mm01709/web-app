@@ -233,20 +233,24 @@ async function uploadSmall(file, mimeType) {
     xhr.onload = () => {
       _uploadXhr = null;
       if (_uploadAbort) return;
-      if (xhr.status === 200) {
-        const data = JSON.parse(xhr.responseText);
-        _uploadedUrl = data.publicUrl;
-        showUploadDone(file.name);
-        resolve();
+      if (xhr.status === 200 || xhr.status === 201) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          _uploadedUrl = data.publicUrl || data.url || data.fileUrl;
+          if (!_uploadedUrl) { console.error("upload response missing publicUrl:", xhr.responseText); showError("فشل: لا يوجد رابط في الرد"); reject(); return; }
+          showUploadDone(file.name);
+          resolve();
+        } catch(e) { console.error("upload parse error:", e, xhr.responseText); showError("فشل قراءة رد الخادم"); reject(); }
       } else {
+        console.error("upload failed status:", xhr.status, "body:", xhr.responseText);
         $("upload-status").style.display = "none";
-        showError("فشل رفع الملف: " + xhr.status);
+        showError("فشل رفع الملف: " + xhr.status + " — " + xhr.responseText.slice(0, 80));
         reject();
       }
     };
     xhr.onerror = () => {
       _uploadXhr = null;
-      if (!_uploadAbort) { $("upload-status").style.display = "none"; showError("خطأ في الاتصال أثناء الرفع"); }
+      if (!_uploadAbort) { console.error("upload XHR network error"); $("upload-status").style.display = "none"; showError("خطأ في الاتصال أثناء الرفع"); }
       reject();
     };
     xhr.send(file);
@@ -262,7 +266,7 @@ async function uploadMultipart(file, mimeType) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ fileName: file.name, chatId: "watchparty", uploadedBy: "watchparty", folder: "videos", contentType: mimeType })
   });
-  if (!initRes.ok) { showError("فشل بدء الرفع"); return; }
+  if (!initRes.ok) { const errTxt = await initRes.text().catch(()=>""); console.error("multipart init failed:", initRes.status, errTxt); showError("فشل بدء الرفع: " + initRes.status + " — " + errTxt.slice(0,80)); return; }
   const { uploadId, objectKey, publicUrl } = await initRes.json();
 
   const parts = [];
@@ -278,13 +282,20 @@ async function uploadMultipart(file, mimeType) {
     // retry 3x
     let etag = "";
     for (let attempt = 1; attempt <= 3; attempt++) {
-      const partRes = await fetch(`${R2_WORKER}/api/r2/multipart/part?uploadId=${encodeURIComponent(uploadId)}&objectKey=${encodeURIComponent(objectKey)}&partNumber=${i + 1}`, {
+      const partRes = await fetch(`${R2_WORKER}/api/r2/multipart/part`, {
         method: "PUT",
-        headers: { "Content-Type": mimeType },
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "x-upload-id": uploadId,
+          "x-object-key": objectKey,
+          "x-part-number": String(i + 1),
+        },
         body: chunk
       });
       if (partRes.ok) { const d = await partRes.json(); etag = d.etag || d.ETag || ""; break; }
-      if (attempt === 3) { showError("فشل رفع جزء " + (i + 1)); return; }
+      const pErrTxt = await partRes.text().catch(()=>"");
+      console.error(`part ${i+1} attempt ${attempt} failed:`, partRes.status, pErrTxt);
+      if (attempt === 3) { showError("فشل رفع جزء " + (i + 1) + ": " + partRes.status + " — " + pErrTxt.slice(0,60)); return; }
       await new Promise(r => setTimeout(r, 1500 * attempt));
     }
     parts.push({ partNumber: i + 1, etag });
@@ -301,7 +312,7 @@ async function uploadMultipart(file, mimeType) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ uploadId, objectKey, parts, publicUrl })
   });
-  if (!compRes.ok) { showError("فشل إنهاء الرفع"); return; }
+  if (!compRes.ok) { const cErrTxt = await compRes.text().catch(()=>""); console.error("multipart complete failed:", compRes.status, cErrTxt); showError("فشل إنهاء الرفع: " + compRes.status + " — " + cErrTxt.slice(0,80)); return; }
   const compData = await compRes.json();
   _uploadedUrl = compData.publicUrl || publicUrl;
   showUploadDone(file.name);
