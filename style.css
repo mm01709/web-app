@@ -374,8 +374,8 @@ input::placeholder { color: var(--white24); }
    fullscreen       → row, sidebar right, toggle with .open
 ══════════════════════════════════════════ */
 
-/* ── Landscape موبايل ── */
-@media (orientation: landscape) and (max-width: 768px) {
+/* ── Landscape موبايل (بس لو عرض > 480px عشان WebView مش يتأثر) ── */
+@media (orientation: landscape) and (max-width: 768px) and (min-width: 480px) {
   #watch-root { flex-direction: row; }
   #video-area { flex: 1; height: 100dvh; min-width: 0; }
   #sidebar {
@@ -649,7 +649,7 @@ body.is-fullscreen #video-overlay,
   display: flex;
   flex-direction: column;
   gap: 10px;
-  z-index: 40;
+  z-index: 55;
   transition: opacity 0.3s;
 }
 #fabs.hidden { opacity: 0; pointer-events: none; }
