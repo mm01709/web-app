@@ -423,13 +423,51 @@ function connect() {
       resolve();
     };
     ws.onerror = () => { clearTimeout(timeout); reject(new Error("فشل الاتصال")); };
-    ws.onclose = () => { if (socket === ws) { socket = null; toast("🔴 انقطع الاتصال"); } };
+    ws.onclose = () => {
+      if (socket === ws) {
+        socket = null;
+        toast("🔴 انقطع الاتصال — جاري إعادة الاتصال...");
+        _scheduleReconnect();
+      }
+    };
     ws.onmessage = (e) => { try { handleMessage(JSON.parse(e.data)); } catch (err) {} };
   });
 }
 
 function isConnected() { return socket && socket.readyState === WebSocket.OPEN; }
 function send(obj) { if (isConnected()) socket.send(JSON.stringify(obj)); }
+
+let _reconnectTimer = null;
+let _reconnectAttempts = 0;
+
+function _scheduleReconnect() {
+  if (_reconnectTimer) return;
+  // exponential backoff: 2s, 4s, 8s, max 30s
+  const delay = Math.min(2000 * Math.pow(2, _reconnectAttempts), 30000);
+  _reconnectAttempts++;
+  _reconnectTimer = setTimeout(async () => {
+    _reconnectTimer = null;
+    if (!roomId || !username) return;
+    try {
+      await connect();
+      _reconnectAttempts = 0;
+      toast("✅ عاد الاتصال");
+      // أعد إرسال الـ join + voice لو كنت فيه
+      if (inVoice) send({ type: "voice_join", roomId, username });
+    } catch (_) {
+      _scheduleReconnect(); // حاول تاني
+    }
+  }, delay);
+}
+
+// لما التاب يرجع للأمام — تحقق من الاتصال فوراً
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && roomId && !isConnected()) {
+    if (_reconnectTimer) { clearTimeout(_reconnectTimer); _reconnectTimer = null; }
+    _reconnectAttempts = 0;
+    _scheduleReconnect();
+  }
+});
 
 function handleMessage(msg) {
   switch (msg.type) {
