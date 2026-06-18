@@ -359,10 +359,34 @@ function showError(msg) {
   $("join-error").textContent = "❌ " + msg;
 }
 
+function _keepAlive() {
+  // يمنع Chrome من عمل tab discard أو تعليق الـ JS لما التاب في الخلفية
+  if (navigator.locks) {
+    navigator.locks.request("wp-keep-alive", { mode: "shared" }, () =>
+      new Promise(() => {}) // promise مش بتتحل = lock دايماً شغال
+    );
+  }
+  // Screen Wake Lock لو الجهاز موبايل — يمنع الشاشة من الإغلاق التلقائي
+  if ("wakeLock" in navigator) {
+    const _acquireWakeLock = async () => {
+      try {
+        const wl = await navigator.wakeLock.request("screen");
+        document.addEventListener("visibilitychange", async () => {
+          if (document.visibilityState === "visible") {
+            try { await navigator.wakeLock.request("screen"); } catch(_) {}
+          }
+        }, { once: false });
+      } catch(_) {}
+    };
+    _acquireWakeLock();
+  }
+}
+
 function startSession(room, user) {
   roomId = room;
   username = user;
   localStorage.setItem("wp-username", user);
+  _keepAlive();
   $("join-error").textContent = "";
   $("btn-create").textContent = "⏳ جاري الاتصال...";
 
