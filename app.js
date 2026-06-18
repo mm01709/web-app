@@ -1488,6 +1488,14 @@ function handleVoiceState(uids) {
   voiceUsers.clear();
   newSet.forEach(uid => voiceUsers.add(uid));
 
+  // لو السيرفر شالني من المكالمة (مثلاً Flutter عمل leave) — اطلع تلقائياً
+  if (inVoice && !newSet.has(username)) {
+    inVoice = false;
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    try { $("fb-voice").classList.remove("in-voice"); $("fb-voice").textContent = "🎙"; $("fb-mute").style.display = "none"; } catch(_) {}
+    try { $("fab-voice").classList.remove("in-voice"); $("fab-mute").style.display = "none"; } catch(_) {}
+  }
+
   renderVoiceAvatars();
 }
 
