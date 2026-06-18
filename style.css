@@ -1032,6 +1032,46 @@ body.is-fullscreen #video-overlay,
   flex-shrink: 0;
 }
 
+.change-video-upload {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.btn-room-upload {
+  background: var(--white08);
+  border: 1px solid rgba(232,160,32,0.25);
+  border-radius: 8px;
+  color: var(--white60);
+  font-size: 12px;
+  padding: 7px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-room-upload:hover { border-color: var(--gold); color: var(--gold); }
+.room-upload-status {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.room-upload-bar-wrap {
+  flex: 1;
+  height: 4px;
+  background: var(--white12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.room-upload-bar {
+  height: 100%;
+  background: var(--gold);
+  width: 0%;
+  transition: width 0.2s;
+  border-radius: 2px;
+}
+#room-upload-pct { font-size: 11px; color: var(--white60); white-space: nowrap; }
+
 /* ══════════════════════════════════════
    Media Panel (R2 browser inside room)
 ══════════════════════════════════════ */

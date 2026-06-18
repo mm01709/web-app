@@ -693,6 +693,7 @@ function buildSidebar() {
   $("btn-change-cancel").onclick = () => { $("change-video-panel").style.display = "none"; };
   $("btn-change-confirm").onclick = () => _changeVideo();
   $("inp-change-url").addEventListener("keydown", (e) => { if (e.key === "Enter") _changeVideo(); });
+  initRoomUpload();
 
   // زر مكتبة الفيديوهات
   $("sb-media").onclick = toggleMediaPanel;
@@ -1550,10 +1551,151 @@ function applyVideoOnlyMode() {
 }
 
 // ============================================
+//  Keep voice alive in background tab
+// ============================================
+function _keepVoiceAlive() {
+  // AudioContext trick — يمنع المتصفح من تجميد الـ JS لما التاب في الخلفية
+  if (!inVoice) return;
+  try {
+    if (!_keepVoiceAlive._ctx) {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.value = 0; // صامت تماماً
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      _keepVoiceAlive._ctx = ctx;
+    }
+  } catch(_) {}
+}
+_keepVoiceAlive._ctx = null;
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" && inVoice) {
+    _keepVoiceAlive();
+  }
+});
+
+// ============================================
 //  R2 Media Browser (داخل الغرفة)
 // ============================================
 let _mediaPanelOpen = false;
 let _currentPlayingKey = null;
+
+// رفع فيديو جوه الروم
+let _roomUploadAbort = false;
+let _roomUploadXhr = null;
+
+function initRoomUpload() {
+  const btn = $("btn-room-upload");
+  if (!btn) return;
+  const inp = $("inp-room-file");
+  btn.onclick = () => inp && inp.click();
+  if (!inp) return;
+  inp.addEventListener("change", () => {
+    const f = inp.files && inp.files[0];
+    if (f) _startRoomUpload(f);
+  });
+}
+
+async function _startRoomUpload(file) {
+  _roomUploadAbort = false;
+  const status = $("room-upload-status");
+  const bar = $("room-upload-bar");
+  const pct = $("room-upload-pct");
+  if (status) status.style.display = "block";
+
+  const mimeType = file.type || "video/mp4";
+  const setP = (p, txt) => {
+    if (bar) bar.style.width = (p * 100) + "%";
+    if (pct) pct.textContent = Math.round(p * 100) + "% — " + (txt || "");
+  };
+
+  try {
+    let url;
+    if (file.size <= SINGLE_LIMIT) {
+      url = await _roomUploadSmall(file, mimeType, setP);
+    } else {
+      url = await _roomUploadMultipart(file, mimeType, setP);
+    }
+    if (!url) return;
+    if (status) status.style.display = "none";
+    const parsed = { type: "html5", url, hls: false };
+    videoSrc = parsed;
+    loadPlayer(parsed);
+    send({ type: "set_source", roomId, username, source: parsed });
+    toast("✅ تم رفع الفيديو وتشغيله");
+    $("change-video-panel").style.display = "none";
+  } catch(e) {
+    if (status) status.style.display = "none";
+    toast("❌ فشل رفع الفيديو: " + (e.message || e));
+  }
+}
+
+function _roomUploadSmall(file, mimeType, setP) {
+  setP(0, "جاري الرفع...");
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    _roomUploadXhr = xhr;
+    xhr.open("POST", `${R2_WORKER}/api/r2/upload`);
+    xhr.setRequestHeader("Content-Type", mimeType);
+    xhr.setRequestHeader("x-file-name", file.name);
+    xhr.setRequestHeader("x-chat-id", "watchparty");
+    xhr.setRequestHeader("x-uploaded-by", username || "guest");
+    xhr.setRequestHeader("x-folder", "videos");
+    xhr.upload.onprogress = e => { if (e.lengthComputable) setP(e.loaded / e.total, "جاري الرفع..."); };
+    xhr.onload = () => {
+      _roomUploadXhr = null;
+      if (_roomUploadAbort) return resolve(null);
+      if (xhr.status === 200 || xhr.status === 201) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data.publicUrl || data.url || data.fileUrl || null);
+        } catch(e) { reject(e); }
+      } else { reject(new Error("HTTP " + xhr.status)); }
+    };
+    xhr.onerror = () => { _roomUploadXhr = null; reject(new Error("network error")); };
+    xhr.send(file);
+  });
+}
+
+async function _roomUploadMultipart(file, mimeType, setP) {
+  setP(0, "جاري تهيئة الرفع...");
+  const initRes = await fetch(`${R2_WORKER}/api/r2/multipart/init`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fileName: file.name, chatId: "watchparty", uploadedBy: username || "guest", folder: "videos", contentType: mimeType })
+  });
+  if (!initRes.ok) throw new Error("init failed " + initRes.status);
+  const { uploadId, objectKey, publicUrl } = await initRes.json();
+  const parts = [];
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  let uploaded = 0;
+  for (let i = 0; i < totalChunks; i++) {
+    if (_roomUploadAbort) return null;
+    const chunk = file.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+    setP(uploaded / file.size, `جزء ${i+1}/${totalChunks}`);
+    const partRes = await fetch(`${R2_WORKER}/api/r2/multipart/part`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/octet-stream", "x-upload-id": uploadId, "x-object-key": objectKey, "x-part-number": String(i+1) },
+      body: chunk
+    });
+    if (!partRes.ok) throw new Error("part failed " + partRes.status);
+    const d = await partRes.json();
+    parts.push({ partNumber: i+1, etag: d.etag || d.ETag || "" });
+    uploaded += chunk.size;
+  }
+  setP(1, "جاري الإنهاء...");
+  const compRes = await fetch(`${R2_WORKER}/api/r2/multipart/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uploadId, objectKey, parts, publicUrl })
+  });
+  if (!compRes.ok) throw new Error("complete failed " + compRes.status);
+  const cd = await compRes.json();
+  return cd.publicUrl || publicUrl;
+}
 
 function _changeVideo() {
   const inp = $("inp-change-url");
