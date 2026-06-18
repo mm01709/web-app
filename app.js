@@ -1352,6 +1352,14 @@ async function joinVoice() {
   try { $("fb-voice").classList.add("in-voice"); $("fb-voice").textContent = "🔴"; } catch(_) {}
   try { $("fab-voice").classList.add("in-voice"); $("fab-mute").style.display = ""; } catch(_) {}
 
+  // ابدأ offer مع كل من هو في الغرفة بالفعل قبل voice_state يوصل
+  voiceUsers.forEach(uid => {
+    if (uid !== username) {
+      const shouldOffer = username.localeCompare(uid) > 0;
+      createPeer(uid, shouldOffer);
+    }
+  });
+
   send({ type: "voice_join", roomId, username });
   toast("انضممت للصوت 🎙");
 }
