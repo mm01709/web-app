@@ -1542,6 +1542,11 @@ function tryAutoJoin() {
         } else if (videoSrc) {
           loadPlayer(videoSrc);
         }
+        // لو Flutter بعت voice=1 — انضم للمكالمة تلقائياً بعد الاتصال
+        const _autoVoice = new URLSearchParams(window.location.search).get("voice");
+        if (_autoVoice === "1") {
+          joinVoice();
+        }
       }, 600);
     })
     .catch((e) => {
