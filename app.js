@@ -15,6 +15,7 @@ let videoSrc = null;       // { type: "html5"|"youtube", url, id }
 let player = null;         // واجهة موحّدة للمشغّل الحالي
 let ytReady = false;
 let ytApiLoading = false;
+let ytPlayer = null; // اختصار مباشر لـ YT.Player instance
 let _roomStateReceived = false; // منع source من إعادة التحميل بعد room_state
 
 // ── عناصر ──
@@ -518,7 +519,10 @@ function loadYouTube(videoId) {
   if (_ytInstance) {
     try { _ytInstance.destroy(); } catch(_) {}
     _ytInstance = null;
+    ytPlayer = null;
     player = null;
+    const shield = document.getElementById("yt-click-shield");
+    if (shield) shield.style.display = "none";
   }
 
   // أعد إنشاء الـ div عشان YT.Player يشتغل صح
@@ -539,6 +543,7 @@ function loadYouTube(videoId) {
       events: {
         onReady: () => {
           _ytInstance = yt;
+          ytPlayer = yt;
           player = {
             play: () => { try { yt.playVideo(); } catch(_) {} },
             pause: () => { try { yt.pauseVideo(); } catch(_) {} },
@@ -546,6 +551,12 @@ function loadYouTube(videoId) {
             getTime: () => { try { return yt.getCurrentTime() || 0; } catch(_) { return 0; } },
             _yt: yt,
           };
+          // فعّل الـ shield عشان نقدر نمسك click فوق الـ iframe
+          const shield = document.getElementById("yt-click-shield");
+          if (shield) {
+            shield.style.display = "block";
+            shield.onclick = () => showOverlay();
+          }
         },
         onStateChange: (e) => {
           if (isSyncing || !player) return;
