@@ -983,6 +983,56 @@ body.is-fullscreen #video-overlay,
 .sb-send:hover { opacity: 0.85; }
 
 /* ══════════════════════════════════════
+   Change Video Panel
+══════════════════════════════════════ */
+#change-video-panel {
+  background: var(--panel);
+  border-bottom: 1px solid rgba(232,160,32,0.15);
+  flex-shrink: 0;
+  padding: 10px 12px;
+}
+.change-video-inner {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+#inp-change-url {
+  flex: 1;
+  background: var(--white08);
+  border: 1px solid rgba(232,160,32,0.25);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 12px;
+  padding: 8px 11px;
+  outline: none;
+  direction: ltr;
+}
+#inp-change-url:focus { border-color: var(--gold); }
+#inp-change-url::placeholder { color: var(--white24); }
+#btn-change-confirm {
+  background: var(--gold);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#btn-change-cancel {
+  background: var(--white08);
+  border: 1px solid var(--white12);
+  border-radius: 8px;
+  color: var(--white60);
+  font-size: 13px;
+  width: 30px; height: 30px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════
    Media Panel (R2 browser inside room)
 ══════════════════════════════════════ */
 #media-panel {

@@ -161,10 +161,20 @@
         <img src="logo.png" class="sb-logo-img" alt="logo" />
         <span class="sb-title">صوصو صوصو</span>
         <span class="sb-room" id="sb-room-code" title="اضغط للنسخ">------</span>
+        <button class="sb-icon-btn" id="sb-change-video" title="تغيير الفيديو">🎬</button>
         <button class="sb-icon-btn" id="sb-media" title="مكتبة الفيديوهات">📂</button>
         <button class="sb-icon-btn" id="sb-share" title="نسخ الكود">🔗</button>
         <button class="sb-icon-btn" id="sb-leave" title="مغادرة">🚪</button>
         <button class="sb-icon-btn" id="sb-close-chat" title="إغلاق">✕</button>
+      </div>
+
+      <!-- تغيير الفيديو -->
+      <div id="change-video-panel" style="display:none">
+        <div class="change-video-inner">
+          <input type="text" id="inp-change-url" placeholder="رابط YouTube أو MP4..." autocomplete="off" />
+          <button id="btn-change-confirm">▶ تشغيل</button>
+          <button id="btn-change-cancel">✕</button>
+        </div>
       </div>
 
       <!-- مكتبة الفيديوهات -->

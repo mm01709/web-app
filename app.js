@@ -648,6 +648,17 @@ function buildSidebar() {
   $("sb-leave").onclick = () => { leaveVoice(); location.reload(); };
   try { $("sb-close-chat").onclick = () => toggleChat(false); } catch(_) {}
 
+  // زرار تغيير الفيديو
+  $("sb-change-video").onclick = () => {
+    const panel = $("change-video-panel");
+    const isOpen = panel.style.display !== "none";
+    panel.style.display = isOpen ? "none" : "";
+    if (!isOpen) setTimeout(() => $("inp-change-url").focus(), 50);
+  };
+  $("btn-change-cancel").onclick = () => { $("change-video-panel").style.display = "none"; };
+  $("btn-change-confirm").onclick = () => _changeVideo();
+  $("inp-change-url").addEventListener("keydown", (e) => { if (e.key === "Enter") _changeVideo(); });
+
   // زر مكتبة الفيديوهات
   $("sb-media").onclick = toggleMediaPanel;
   $("media-close").onclick = () => { $("media-panel").style.display = "none"; };
@@ -1493,6 +1504,20 @@ function applyVideoOnlyMode() {
 // ============================================
 let _mediaPanelOpen = false;
 let _currentPlayingKey = null;
+
+function _changeVideo() {
+  const inp = $("inp-change-url");
+  const url = inp.value.trim();
+  if (!url) return;
+  const parsed = parseVideoUrl(url);
+  if (!parsed) { toast("❌ رابط غير صحيح"); return; }
+  inp.value = "";
+  $("change-video-panel").style.display = "none";
+  videoSrc = parsed;
+  loadPlayer(parsed);
+  send({ type: "set_source", roomId, username, source: parsed });
+  toast("▶ تم تغيير الفيديو");
+}
 
 function toggleMediaPanel() {
   _mediaPanelOpen = !_mediaPanelOpen;
