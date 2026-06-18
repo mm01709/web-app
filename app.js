@@ -1360,14 +1360,17 @@ function createPeer(uid, isInitiator) {
 
   // استقبل الصوت البعيد
   pc.ontrack = (e) => {
+    const stream = e.streams && e.streams[0] ? e.streams[0] : new MediaStream([e.track]);
     let audioEl = document.getElementById("audio-" + uid);
     if (!audioEl) {
       audioEl = document.createElement("audio");
       audioEl.id = "audio-" + uid;
       audioEl.autoplay = true;
+      audioEl.setAttribute("playsinline", "");
       $("remote-audios").appendChild(audioEl);
     }
-    audioEl.srcObject = e.streams[0];
+    audioEl.srcObject = stream;
+    audioEl.play().catch(() => {});
   };
 
   // إرسال ICE candidates
@@ -1417,9 +1420,10 @@ function handleVoiceState(uids) {
   // تعامل مع من انضم حديثاً
   newSet.forEach(uid => {
     if (uid !== username && !voiceUsers.has(uid)) {
-      // مستخدم جديد في الصوت — لو أنا في الصوت أبدأ اتصال معاه
       if (inVoice && localStream) {
-        createPeer(uid, true);
+        // اللي اسمه أكبر أبجدياً هو اللي يبعت الـ offer — يمنع الـ glare collision
+        const shouldOffer = username.localeCompare(uid) > 0;
+        createPeer(uid, shouldOffer);
       }
     }
   });
